@@ -1,0 +1,6 @@
+<div style="padding-top: 5px;">
+	<select class="layer-style-type-dropdown">
+		<option value="Simple_<%= layer.id %>_<%= layer.fcID %>" <%if(layer.styles.type === "simple"){%>selected<%}%>>Simple</option>
+		<option value="Category_<%= layer.id %>_<%= layer.fcID %>" <%if(layer.styles.type === "category"){%>selected<%}%>>Category<option>
+	<select>
+</div>

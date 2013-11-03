@@ -1,0 +1,374 @@
+<link rel="stylesheet" href="http://cdn.leafletjs.com/leaflet-0.6.4/leaflet.css" />
+<!--[if lte IE 8]>
+    <link rel="stylesheet" href="http://cdn.leafletjs.com/leaflet-0.6.4/leaflet.ie.css" />
+<![endif]-->
+<script src="http://cdn.leafletjs.com/leaflet-0.6.4/leaflet.js"></script>
+
+<div id="mapContainer" class="">
+	<div class="row">
+  	<div class="col-xs-3" style="padding-right: 0px;">
+
+  		<div id="map_sidebar" style="background-color:; height: 100px;">
+  			
+        <div id="assetFilterMenu" style="background-color: ; padding: 5px;">
+	      	<select id="assetFilterMenuSelect" style="width: 74%;">
+	      		<option></option>
+            <% _.each(feature_collections, function(fc){ %>
+              <option class="assetFilterMenuItem" value="<%= fc.id %>"><%= fc.name %></option>
+            <% }); %>
+	      	</select>
+	        <button id="assetFilterItemAdd" type="button" class="btn btn-default btn-xs" style="width: 24%; height: 26px;"><strong>Add</strong></button>
+        </div>
+
+  			<div id="map_layers" data="<%= layers.length %>" class="layers-sortable" style="padding: 5px 10px 5px 10px;">
+          <% _.each(layers, function(layer){ %>
+            <%- partial("_layer",{layer: layer}) %>
+          <% }); %>
+			  </div>
+
+  		</div>
+
+  	</div>
+  	<div class="col-xs-9" style="background-color: tan; padding-left: 0px;">
+      <div id="map" style="height: 200px;"></div>
+  	</div>
+	</div>
+</div>
+
+<script type="text/javascript">
+  var gMap = undefined;
+  var gLayers = {};
+  var gLayersCount = 0;
+  var polling = undefined;
+
+  $( document ).ready(function() {
+
+    setScreenElementDimensions();
+
+    setupAddAssetForm();
+
+    setupLayerControls();
+
+    setupLayerStyleDialogs();
+
+    initLeafletMap();
+    
+  });
+  
+  var setScreenElementDimensions = function () {
+    var height = window.innerHeight - 50
+    $("#map").css("height",height);
+    $("#map_sidebar").css("height",height);
+  };
+
+  var setupAddAssetForm = function () {
+    $("#assetFilterMenuSelect").select2({
+      placeholder: "Select an Asset..."
+    });
+    
+    $("#assetFilterItemAdd").click(function (e) { 
+      gMap.spin(true);
+      var fcID = $('#assetFilterMenuSelect').val();
+      if (!_.isEmpty(fcID)) {
+        $.ajax({url: "/map/layer?fcID=" + fcID}).done(function(data) {
+          $("#map_layers").prepend(data);
+          var elID = $(data).attr("id");
+          var layerID = elID.replace("layer_","");
+          $("#" + elID + " .form_color .colorPicker").colorPicker();
+          // console.log($(".layer-style-type-dropdown"));
+          $("#" + elID + " .layer-style-type-dropdown").select2();
+          $("#" + elID + " .layer-style-type-dropdown").on("click", function (e) {
+            handleStyleTypeDropdownClick(e);
+          });
+          $("#" + elID + " .layer-style-field-dropdown").select2();
+          $("#" + elID + " .layer-style-field-dropdown").on("click", function (e) {
+            handleStyleFieldDropdownClick(e);
+          });
+          drawLeafletLayers(gLayers,gMap);
+          var arrLayersID = $(".layers-sortable").sortable("toArray");
+          var scrubbedIDs = _.map(arrLayersID,function(id){return id.split("_")[1]});
+          // updateLayerDrawOrder(scrubbedIDs,gLayers,gMap);
+          drawZIndexOrder(gLayers,gMap);
+          gMap.spin(false);
+        });
+      };
+    });
+  };
+
+  var setupLayerControls = function () {
+
+    setupLayerSorting();
+
+    $(document).on("click","input[type=checkbox]", function (e) {
+      var layerID = e.currentTarget.value;
+      if (e.currentTarget.checked === false) {
+        gMap.removeLayer(gLayers[layerID].layer);
+        updateLayerVisibility(layerID,false);
+      } else {
+        gLayers[layerID].layer.addTo(gMap);
+        updateLayerVisibility(layerID,true);
+      };
+      console.log("drawZIndexOrder");
+      drawZIndexOrder(gLayers,gMap);
+    });
+    
+    $(document).on("click touchend",".remove-layer",function (e) {
+      e.preventDefault();
+      var layerID = (e.currentTarget.id).split("_")[1];
+      console.log(layerID);
+      $.ajax({url: "layer/destroy/" + layerID}).done(function(data){
+        console.log(data);
+        $("#layer_" + layerID).remove();
+        gMap.removeLayer(gLayers[layerID].layer);
+        // todo: put the layer name back in the option box
+      });
+    });
+  }
+
+  var setupLayerStyleDialogs = function () {
+    setupLayerStyleTypeDropDown();
+    setupColorPicker();
+    setupOpacityStrokeSizeForms();
+  };
+  
+  var setupLayerStyleTypeDropDown = function() {
+    $(".layer-style-type-dropdown").select2();
+    $(".layer-style-type-dropdown").on("click", function (e) {
+      handleStyleTypeDropdownClick(e);
+    });
+
+    $(".layer-style-field-dropdown").select2();
+    $(".layer-style-field-dropdown").on("click", function (e) {
+      handleStyleFieldDropdownClick(e);
+    });
+  };
+
+  var setupColorPicker = function () {
+    $.fn.colorPicker.defaults.colors = ['FFFFD4', 'FEE391', 'FEC44F', 'FE9929','D95F0E', '993404', 
+                                        'EFF3FF','C6DBEF','9ECAE1','6BAED6','3182BD','08519C',
+                                        '8C510A','D8B365','F6E8C3','C7EAE5','5AB4AC','5AB4AC',
+                                        'D73027','FC8D59','FEE090','E0F3F8','91BFDB','4575B4',
+                                        'E41A1C','377EB8','4DAF4A','984EA3','FF7F00','FFFF33',
+                                        '8DD3C7','FFFFB3','BEBADA','FB8072','80B1D3','FDB462',
+                                        'A6CEE3','1F78B4','B2DF8A','33A02C','FB9A99','E31A1C',
+                                        'FDBF6F','FF7F00','CAB2D6','6A3D9A','ffffff','000000'];
+
+    $(".colorPicker").colorPicker();
+
+    $(document).on("change","input.colorPicker",function(e){
+      var target = $(e.currentTarget);
+      // var targetSplit = target.parent().parent().attr("id").split("_");
+      // console.log(targetSplit);
+      var action = target.parent().parent().attr("id").split("_")[0];
+      var layerID = target.parent().parent().attr("id").split("_")[1];
+      var subLayerID = target.parent().parent().attr("id").split("_")[2];
+      var newColor = e.target.value;
+      updateLayerColor(layerID,newColor,action,subLayerID,gLayers);
+    });
+  };
+
+  var setupLayerSorting = function () {
+    $(".layers-sortable").sortable({
+      axis: 'y',
+      handle: '.drag-handle',
+      cursor: 'move'
+    });
+    $(".layers-sortable").disableSelection();
+    $(".layers-sortable").on("sortupdate",function(e,ui){
+      var arrLayersID = $(".layers-sortable").sortable("toArray");
+      var scrubbedIDs = _.map(arrLayersID,function(id){return id.split("_")[1]});
+      updateLayerDrawOrder(scrubbedIDs,gLayers,gMap);
+    });
+  };
+
+  var setupOpacityStrokeSizeForms = function () {
+    $(document).on("click",".layer-form a",function (e) {
+      e.stopPropagation();
+      e.preventDefault();
+      var target = $(e.currentTarget);
+      if (target.parent().hasClass('form_color')) return;
+      // console.log("not form_color");
+      var attribute = undefined;
+      if (target.parent().hasClass('form_radius')) attribute = 'radius';
+      if (target.parent().hasClass('form_opacity')) attribute = 'opacity';
+      if (target.parent().hasClass('form_weight')) attribute = 'weight';
+      var action = target.parent().parent().attr("id").split("_")[0];
+      var layerID = target.parent().parent().attr("id").split("_")[1];
+      var increment = target.hasClass("plus") ? true : false;
+      var input = target.siblings('input');
+      var inputVal = parseFloat(target.siblings('input').val());
+      if ((attribute === 'opacity') || (attribute === 'weight') || (attribute === 'radius')) {
+        var step = (attribute === 'opacity') ? 0.1 : 0.5
+        if (increment) {
+          if (attribute === 'opacity') {
+            inputVal = (inputVal === 1.0) ? 1.0 : (inputVal + step);
+          } else {
+            inputVal = inputVal + step;
+          };
+        } else {
+          inputVal = (inputVal === 0) ? 0 : (inputVal - step);
+        };
+        fixedInputVal = inputVal.toFixed(1); 
+        input.val(fixedInputVal);
+        style = undefined;
+        if (attribute === 'opacity') {
+          if (action === "fill") {style = {fillOpacity: fixedInputVal}};
+          if (action === "stroke") {style = {opacity: fixedInputVal}};
+        };
+        if (attribute === 'weight') {
+          style = {weight: fixedInputVal};
+        };
+        if (attribute === 'radius') {
+          style = {radius: fixedInputVal};
+        };
+        gLayers[layerID].layer.setStyle(style);
+        updateLayerStyle(layerID,fixedInputVal,action,attribute);
+      };
+    });
+  };
+
+  var initLeafletMap = function () {
+    gLayersCount = $("#map_layers").attr("data");
+    if (gLayersCount > 0) {
+      polling = setInterval(pollGLayers,1000);
+    };
+
+    gMap = generateLeafletBaseMap();
+    if (gLayersCount > 0) gMap.spin(true);
+    drawLeafletLayers(gLayers,gMap);
+  };
+
+  // Polls to make sure all Map layers 
+  // have loaded and then sets zIndex draw order.
+  var pollGLayers = function(){
+    var gLayersLength = Object.keys(gLayers).length;
+    var gMapLayersLength = Object.keys(gMap._layers).length;
+    if (gLayersCount.toString() === gLayersLength.toString()){
+      clearInterval(polling);
+      drawZIndexOrder(gLayers,gMap);
+      gMap.spin(false);
+    };
+  };
+
+  var handleStyleTypeDropdownClick= function (e) {
+    var arrValue = $(e.currentTarget).val().split("_");
+    var styleType = arrValue[0];
+    var layerID = arrValue[1];
+    var fcID = arrValue[2];
+    // console.log([styleType,layerID,fcID,arrValue]);
+    var layerSelector = "#layer_" + layerID;
+    if (styleType === "Simple") {
+      $(layerSelector + " .layer-forms").html("");
+      // data: {type: styleType, layerID: layerID, fcID: fcID}
+      var url = "/style/generate?type=" + styleType + "&layerID=" + layerID + "&fcID=" + fcID;
+      $.ajax({url: url}).done(function(html) {
+        $(layerSelector + " .layer-forms").html(html);
+        $(layerSelector + " .layer-style-field-dropdown").select2();
+        $(layerSelector + " .layer-style-field-dropdown").on("click", function (e) {
+          handleStyleFieldDropdownClick(e);
+        });
+        $(layerSelector + " .form_color .colorPicker").colorPicker();
+        gMap.removeLayer(gLayers[layerID].layer);
+        gLayers[layerID] = undefined;
+        drawLeafletLayers(gLayers,gMap);
+      });
+    };
+    if (styleType === "Category") {
+      $(layerSelector + " .layer-forms").html("");
+      // data: {type: styleType, layerID: layerID, fcID: fcID}
+      var url = "/style/generate?type=" + styleType + "&layerID=" + layerID + "&fcID=" + fcID;
+      $.ajax({url: url}).done(function(html) {
+        $(layerSelector + " .layer-forms").html(html);
+        $(layerSelector + " .layer-style-field-dropdown").select2();
+        $(layerSelector + " .layer-style-field-dropdown").on("click", function (e) {
+          handleStyleFieldDropdownClick(e);
+        });
+        $(layerSelector + " .form_color .colorPicker").colorPicker();
+        gMap.removeLayer(gLayers[layerID].layer);
+        gLayers[layerID] = undefined;
+        drawLeafletLayers(gLayers,gMap);
+      });
+    };     
+  };
+
+  var handleStyleFieldDropdownClick= function (e) {
+    var field = $(e.currentTarget).val();
+    var layerID = $(e.currentTarget).attr("id").split("_")[1];
+    var fcID = $(e.currentTarget).attr("id").split("_")[2];
+    var styleType = "Category";
+    // console.log([styleType,layerID,fcID,field]);
+    var layerSelector = "#layer_" + layerID;
+    if (styleType === "Simple") {
+      $(layerSelector + " .layer-forms").html("");
+      // data: {type: styleType, layerID: layerID, fcID: fcID}
+      var url = "/style/generate?type=" + styleType + "&layerID=" + layerID + "&fcID=" + fcID + "&field=" + field;
+      $.ajax({url: url}).done(function(html) {
+        $(layerSelector + " .layer-forms").html(html);
+        $(layerSelector + " .layer-style-field-dropdown").select2();
+        $(layerSelector + " .layer-style-field-dropdown").on("click", function (e) {
+          handleStyleFieldDropdownClick(e);
+        });
+        $(layerSelector + " .form_color .colorPicker").colorPicker();
+        gMap.removeLayer(gLayers[layerID].layer);
+        gLayers[layerID] = undefined;
+        drawLeafletLayers(gLayers,gMap);
+      });
+    };
+    if (styleType === "Category") {
+      $(layerSelector + " .layer-forms").html("");
+      // data: {type: styleType, layerID: layerID, fcID: fcID}
+      var url = "/style/generate?type=" + styleType + "&layerID=" + layerID + "&fcID=" + fcID + "&field=" + field;
+      $.ajax({url: url}).done(function(html) {
+        $(layerSelector + " .layer-forms").html(html);
+        $(layerSelector + " .layer-style-field-dropdown").select2();
+        $(layerSelector + " .layer-style-field-dropdown").on("click", function (e) {
+          handleStyleFieldDropdownClick(e);
+        });
+        $(layerSelector + " .form_color .colorPicker").colorPicker();
+        gMap.removeLayer(gLayers[layerID].layer);
+        gLayers[layerID] = undefined;
+        drawLeafletLayers(gLayers,gMap);
+      });
+    };     
+  };
+    
+  
+  
+  
+  
+  
+  
+  // var initColorPicker = function() {
+  //   $.fn.colorPicker.defaults.colors = ['FFFFD4', 'FEE391', 'FEC44F', 'FE9929','D95F0E', '993404', 
+  //                                       'EFF3FF','C6DBEF','9ECAE1','6BAED6','3182BD','08519C',
+  //                                       '8C510A','D8B365','F6E8C3','C7EAE5','5AB4AC','5AB4AC',
+  //                                       'D73027','FC8D59','FEE090','E0F3F8','91BFDB','4575B4',
+  //                                       'E41A1C','377EB8','4DAF4A','984EA3','FF7F00','FFFF33',
+  //                                       '8DD3C7','FFFFB3','BEBADA','FB8072','80B1D3','FDB462'];
+  //   $(".colorPicker").colorPicker();
+  // };
+  
+  // var initColorPicker = function (filter,layers) {
+ //    $.fn.colorPicker.defaults.colors = ['FFFFD4', 'FEE391', 'FEC44F', 'FE9929','D95F0E', '993404', 
+ //                                        'EFF3FF','C6DBEF','9ECAE1','6BAED6','3182BD','08519C',
+ //                                        '8C510A','D8B365','F6E8C3','C7EAE5','5AB4AC','5AB4AC',
+ //                                        'D73027','FC8D59','FEE090','E0F3F8','91BFDB','4575B4',
+ //                                        'E41A1C','377EB8','4DAF4A','984EA3','FF7F00','FFFF33',
+ //                                        '8DD3C7','FFFFB3','BEBADA','FB8072','80B1D3','FDB462'];
+ //    if ($('#colorPicker' + filter._id).next().attr('class') !== "colorPicker-picker"){
+ //      $('#colorPicker' + filter._id).colorPicker(); 
+ //      $('#colorPicker' + filter._id).change(function(e){
+ //        var fcID = e.target.id;
+ //        fcID = fcID.replace("colorPicker","");
+ //        var newColor = e.target.value;
+ //        // console.log(fcID);
+ //        // console.log(layers);
+ //        layers[fcID].layer.setStyle({color: newColor, fillColor: newColor});
+ //        // todo - permissions on color change for owner filter.
+ //        colFilters.update({"_id": filter._id},{$set: {color: newColor}});
+ //      });
+ //    };
+ //  };
+    
+</script>
+

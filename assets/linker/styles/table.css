@@ -1,0 +1,32 @@
+#layerTable .tableWrapper {
+  overflow-x: auto;
+/*  width: 200px;*/
+/*  border: 1px solid #000;*/
+}
+
+#layerTable table {
+/*  width: 360px;*/
+  width: 100%;
+  overflow-x: scroll;
+}
+
+#layerTable thead tr {
+  display: block;
+  width: 100%;
+}
+
+#layerTable thead tr th {
+  width: 100%;
+  white-space: nowrap;
+}
+
+#layerTable tbody {
+  width: 100%;
+/*  height: 300px;*/
+  overflow-y: auto;
+  display: block;
+}
+
+#layerTable tbody tr td {
+  white-space: nowrap;
+}

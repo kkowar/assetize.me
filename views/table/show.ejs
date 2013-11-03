@@ -1,0 +1,144 @@
+<input id="fcID" type="hidden" value="<%= fcID %>">
+<div id="layerTable" class="col-xs-12" style="padding-top: 50px; padding-left: 0px; padding-right: 0px;">
+  <div class="tableWrapper">
+    <table id="sourceTable" class="table tableScroll">
+      <thead class="tableFixedHeader">
+        <tr>
+          <% _.each(layerTableHeaders,function(header){ %>
+            <th><%= header %></th>
+          <% }); %>
+        </tr>
+      </thead>
+    	<tbody class="tableScrollContent">
+        <%- partial("_tableRows",{rows: layerTableRows}) %>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<script type="text/javascript">
+  var gScrollX;
+  var gScrollY;
+  var gCurrentPage = 1;
+  var gInfiniteTrigger;
+
+  $( document ).ready(function() {
+    
+    var fcID = $("#fcID").val();
+    
+    $.fn.isOnScreen = function(){
+
+      var win = $(window);
+
+      var viewport = {
+          top : win.scrollTop(),
+          left : win.scrollLeft()
+      };
+      viewport.right = viewport.left + win.width();
+      viewport.bottom = viewport.top + win.height();
+
+      var bounds = this.offset();
+      bounds.right = bounds.left + this.outerWidth();
+      bounds.bottom = bounds.top + this.outerHeight();
+
+      return (!(viewport.right < bounds.left || viewport.left > bounds.right || viewport.bottom < bounds.top || viewport.top > bounds.bottom));
+
+    };
+    
+  	$("tbody").scroll(function(){
+      // var actual_scroll_position = { x:$("tbody").scrollLeft(), y:$("tbody").scrollTop() };
+      var totalRecords = gCurrentPage * 50;
+      var tbody = $("table tbody");
+      var tbodyChildren = tbody.children();
+      var triggerVisible = tbodyChildren.last().isOnScreen();
+      if (tbodyChildren.length === totalRecords) {
+        gInfiniteTrigger = true;
+      };
+      if (triggerVisible && gInfiniteTrigger) {
+        gInfiniteTrigger = false;
+        gScrollX = tbody.scrollLeft();
+        gScrollY = tbody.scrollTop();
+        appendNewRows(fcID);
+      };
+  	});
+  
+    // setTableDimensions();
+    appendNewRows(fcID);
+    
+  });
+  
+  var setTableDimensions = function() {
+    // Setup the table dimensions.
+  
+    // Set the tbody height.
+    var tableHeight = (window.innerHeight - 50 - 20) + "px";
+    var tbodyHeight = (window.innerHeight - Number($("#sourceTable thead").css("height").replace("px","")) - 50 - 20) + "px";
+    $("#sourceTable").css({height: tableHeight});
+    $("#sourceTable tbody").css({height: tbodyHeight});
+  
+    // Figure out and set minimum column widths.
+    var $sourceTH = $("#sourceTable thead tr:first-child").children();
+    var $sourceTD = $("#sourceTable tbody tr:first-child").children();
+    var maxWidthsTH = [];
+    var maxWidthsTD = [];
+    var maxWidths = [];
+    var totWidth = 0;
+    // Iterate over TH to get all TH widths.
+    _.each($sourceTH, function (th,i) {
+      var width = $(th).css("width");
+      maxWidthsTH.push(Number(width.replace("px","")));
+    });
+    // console.log(maxWidthsTH);
+    _.each($sourceTD, function (td,i) {
+      var width = $(td).css("width");
+      maxWidthsTD.push(Number(width.replace("px","")));
+    });
+    // console.log(maxWidthsTD);
+    _.each(maxWidthsTH, function (thWidth,i) {
+      maxWidths.push((maxWidthsTD[i] > thWidth) ? maxWidthsTD[i] : thWidth);
+    });
+    // console.log(maxWidths);
+    // Set a Default width for the fID column.
+    maxWidths[0] = 100;
+    _.each(maxWidths, function(width,i) {
+      $("#sourceTable tbody tr:first-child td:nth-child(" + (i+1) + ")").css({width: width});
+      $("#sourceTable thead tr:first-child th:nth-child(" + (i+1) + ")").css({width: width});
+      totWidth = totWidth + width;
+    });
+    // console.log(totWidth);
+    $("#sourceTable").css({width: totWidth});
+  
+    // $("tbody").scrollLeft(Session.get("scrollX"));
+    // $("tbody").scrollTop(Session.get("scrollY"));
+  
+  };
+  
+  var appendNewRows = function (fcID) {
+    var perPage = 50;
+    var nextPage = gCurrentPage + 1;
+    var skip = gCurrentPage * perPage;
+    var limit = perPage * gCurrentPage;
+    // console.log(timeStamp() + " -> fcID: " + fcID + ", currentPage: " + gCurrentPage + ", perPage: " + perPage + ", limit: " + limit + ", skip: " + skip);
+    // return colFeatures.find({},{limit: perPage, skip: skip * perPage, sort:{fid: -1}});
+    // ?fcID=" + fcID + "&limit=" + perPage + "&skip=" + skip
+    // , "properties.TypeAbbr": "PVC"
+    $.ajax({url: "/feature/find", data: {where: {"fcID": fcID}, limit: perPage, skip: skip}}).done(function(data){
+      var html = "";
+      _.each(data,function(row){
+        html = html + "<tr>";
+        html = html + "<td>" + row.fID + "</td>";
+        _.each(row.properties,function(property){
+      		  html = html + "<td>" + property + "</td>";
+        });
+      	html = html + "</tr>";
+      });
+      $("tbody.tableScrollContent").append(html);
+      setTableDimensions();
+    });
+    gCurrentPage = nextPage;
+  };
+  
+</script>
+
+<!-- table table-striped table-hover -->
+<!-- <div class="infinite-container"></div> -->

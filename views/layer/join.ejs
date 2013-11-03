@@ -1,0 +1,107 @@
+<div id="joinContainer" class="container">
+	<div class="col-md-12">
+		<div class="form-group">
+			<h1>Merge Name</h1>
+			<input id="mergeTableName" type="text" class="form-control">
+		</div>
+	</div>
+	<div class="col-md-6">
+		<h1>First Merge Table</h1>
+		<div>
+			<select id="targetA_fc" class="select2" style="width: 100%;">
+	  		<option></option>
+	  		<% _.each(arrFC,function(fc){ %>
+	  			<option id="targetA_fc_<%= fc.id %>"><%= fc.name %></option>
+	  		<% }); %>
+	  	</select>
+		</div>
+		<div id="targetA_fcProperties" class="radio">
+			
+		</div>
+	</div>
+	<div class="col-md-6">
+		<h1>Second Merge Table</h1>
+		<div>
+			<select id="targetB_fc" class="select2" style="width: 100%;">
+	  		<option></option>
+	  		<% _.each(arrFC,function(fc){ %>
+	  			<option id="targetB_fc_<%= fc.id %>"><%= fc.name %></option>
+	  		<% }); %>
+	  	</select>
+		</div>
+		<div id="targetB_fcProperties" class="radio">
+			
+		</div>
+	</div>
+</div>
+
+<script type="text/javascript">
+	var gMerge = []; 
+
+	$(document).ready(function() {
+		// targetA
+		$("#targetA_fc").select2({
+		  placeholder: "Select a Field..."
+		});
+		$("#targetA_fc").on("change", function (e) {
+			e.preventDefault();
+			var id = $("#targetA_fc option:selected").attr("id").split("_")[2];
+			$.ajax({url:"/featurecollection/find/" + id}).done(function(data){
+				var html = getPropertyFields(data.properties,id,"targetA");
+				$("#targetA_fcProperties").html("").append(html);
+				setEventBindings("targetA");
+			});
+		});
+		// targetB
+		$("#targetB_fc").select2({
+		  placeholder: "Select a Field..."
+		});
+		$("#targetB_fc").on("change", function (e) {
+			e.preventDefault();
+			var id = $("#targetB_fc option:selected").attr("id").split("_")[2];
+			$.ajax({url:"/featurecollection/find/" + id}).done(function(data){
+				var html = getPropertyFields(data.properties,id,"targetB");
+				$("#targetB_fcProperties").html("").append(html);
+				setEventBindings("targetB");
+			});
+		});
+	});
+
+	var getPropertyFields = function(properties,id,target){
+		var html = "";
+		_.each(properties,function(property,index){
+			var htmlID =  target + "_" + id + '_' + index;
+			html = html + '<div class="joinPropertyField"><span style="width: 100%;"><input id="' + htmlID + '" class="fancyRadio" type="radio" name="' + target + '_joinProperty" value="' + property.name + '">'
+  		html = html + '<label class="fancyRadio" for="' + htmlID + '">' + property.name + '</label></span>'
+  		html = html + '<span class="pull-right"><input type="checkbox" class="switch"></span>'
+  		html = html + '</div>'
+		});
+		return html;
+	};
+
+	var setEventBindings = function(target) {
+		$("input[name=" + target + "_joinProperty]:radio").change(function(e){
+			var mergeTableName = $("#mergeTableName").val();
+			var arrID = e.currentTarget.id.split("_");
+			var target = arrID[0];
+			var fcID = arrID[1];
+			var posJoin = arrID[2];
+			var propName = $(e.currentTarget).val();
+			var mergeNames = [];
+			var propDivs = $("#" + target + "_fcProperties").children();
+			_.each(propDivs,function(div){
+				var checked = div.children[1].children[0].checked;
+				if (checked) {
+					mergeNames.push(div.children[0].children[0].value);
+				};
+			});
+			gMerge[target] = {fcID: fcID, mergeNames: mergeNames, propName: propName};
+			if (gMerge["targetA"] && gMerge["targetB"]) {
+				$.ajax({url: "/layer/merge", data: {targetA: gMerge["targetA"], targetB: gMerge["targetB"], mergeTableName: mergeTableName}}).done(function(data){
+					console.log(data);
+				});
+			};
+		});
+		$(".switch").switchButton({checked: true});
+	};
+</script>

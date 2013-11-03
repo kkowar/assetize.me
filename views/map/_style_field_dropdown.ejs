@@ -1,0 +1,7 @@
+<div style="padding-top: 5px;">
+	<select id="field_<%= layer.id %>_<%= layer.fcID %>" class="layer-style-field-dropdown">
+		<% _.each(fields,function(field) { %>
+			<option  <% if (field === selectedField) { %> selected<% } %>><%= field %></option>
+		<% }); %>
+	<select>
+</div>
