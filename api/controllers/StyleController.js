@@ -21,43 +21,72 @@ module.exports = {
   	var type = req.param("type");
   	var layerID = req.param("layerID");
   	var fcID = req.param("fcID");
-    var field = req.param("field") ? req.param("field") : "FLD_ZONE";
+    var field = req.param("field") ? req.param("field") : undefined;
     FeatureCollection.findOne({"id": fcID}).done(function(err,foundFC) {
       if (err) return res.json({error: err});
       if (!foundFC) return res.json({foundFC: foundFC});
       Layer.findOne({"id": layerID}).done(function(err,foundLayer){
         if (err) return res.json({error: err});
         if (!foundLayer) return res.json({foundLayer: foundLayer});
+        var geometryType = foundFC.geometryType;
         if (type === "Simple") {
           foundLayer.styles.type = "simple";
           foundLayer.save(function(err,savedLayer){
             if (err) return console.log(err);
             if (!savedLayer) return;
-            res.view('map/_polygon_simple_form', {layer: foundLayer, layout: null});
+            console.log("Render Geometery Simple: " + geometryType);
+            if (geometryType === "Point" ) {res.view('map/_point_simple_form', {layer: foundLayer, layout: null})};
+            if (geometryType === "Polygon" ) {res.view('map/_polygon_simple_form', {layer: foundLayer, layout: null})};
+            if (geometryType === "LineString" || geometryType === "MultiLineString") {res.view('map/_line_simple_form', {layer: foundLayer, layout: null})};
           });
         };
         if (type === "Category") {
           Feature.find({"fcID": fcID}).done(function(err,foundFeatures){
             if (err) return res.json({error: err});
             if (!foundFeatures) return res.json({foundFeatures: foundFeatures});
-            var fieldHeaders = _.map(foundFC.properties,function(property){return property.name});
-            var fieldValues = _.uniq(_.map(foundFeatures,function(feature){return feature.properties[field]}));
             foundLayer.styles.type = "category";
-            console.log(foundLayer.styles.category);
-            if ((foundLayer.styles.category === undefined) || (foundLayer.styles.category.field !== field)) {
+            var categoryExists = (foundLayer.styles.category === undefined) ? false : true;
+            var fieldHeaders = _.map(foundFC.properties,function(property){return property.name});
+            if (!categoryExists && !field) {field = fieldHeaders[0]};         
+            if (categoryExists && !field) {field = foundLayer.styles.category.field};       
+            var fieldValues = _.map(foundFeatures,function(feature){return feature.properties[field]});
+            // var uniqFieldValues = _.map(_.uniq(fieldValues),function(fV){return _.isEmpty(fV) ? "null" : fV});
+            var fieldValuesCountBy = _.countBy(fieldValues, function(fV){return fV;});
+            var sortable = [];
+            for (var fV in fieldValuesCountBy) {
+              sortable.push([fV, fieldValuesCountBy[fV]])
+              sortable.sort(function(a, b) {return a[1] - b[1]})
+            }
+            var fieldValuesSortedCount = sortable.reverse();
+            fieldValuesSortedCount = fieldValuesSortedCount.slice(0,9);
+            var uniqFieldValues = _.map(fieldValuesSortedCount,function(fV){return fV[0]});
+            // console.log(fieldValuesSortedCount);
+            // console.log(uniqFieldValues)
+            var stroke = !categoryExists ? undefined : foundLayer.styles.category.stroke;
+            var fill = !categoryExists ? undefined : foundLayer.styles.category.fill;
+            var radius = !categoryExists ? undefined : foundLayer.styles.category.radius;
+            if (!categoryExists || (foundLayer.styles.category.field !== field)) {
               var newStyle = {
                 type: "category",
                 geometryType: foundFC.geometryType,
                 field: field,
                 fieldHeaders: fieldHeaders,
-                fieldValues: fieldValues
+                fieldValues: uniqFieldValues,
+                fieldValuesCount: fieldValuesSortedCount,
+                stroke: stroke,
+                fill: fill,
+                radius: radius
               };
               foundLayer.styles.category = generateLayerStyle(newStyle);
             };
             foundLayer.save(function(err,savedLayer){
               if (err) return console.log(err);
               if (!savedLayer) return;
-              res.view('map/_polygon_category_form', {layer: savedLayer,layout: null});
+              console.log("Render Geometery Category: " + geometryType);
+              // res.view('map/_polygon_category_form', {layer: savedLayer,layout: null});
+              if (geometryType === "Point") {res.view('map/_point_category_form', {layer: savedLayer, layout: null})};
+              if (geometryType === "Polygon") {res.view('map/_polygon_category_form', {layer: savedLayer, layout: null})};
+              if (geometryType === "LineString" || geometryType === "MultiLineString") {res.view('map/_line_category_form', {layer: savedLayer, layout: null})};
             });
           });
         };

@@ -1,18 +1,19 @@
+<% var style = layer.styles.simple %>
 <div class="layer-form">
 	<div class="row">
 		<span class="description">Point Fill</span>
-		<span id="fill_<%= layerID %>_0" class="pull-right brushes">
+		<span id="fill_<%= layer.id %>_0" class="pull-right brushes">
 			<%- partial("_form_radius.ejs",{radius: style.radius}) %> 
 			<%- partial("_form_color.ejs",{color: style.fill.color}) %> 
-			<%- partial("_form_opacity.ejs",{opacity: style.fill.opacity, layerID: layerID, categoryID: 0}) %>
+			<%- partial("_form_opacity.ejs",{opacity: style.fill.opacity, layerID: layer.id, categoryID: 0}) %>
 		</span>
 	</div>
 	<div class="row">
 		<span class="description">Point Stroke</span> 
-		<span id="stroke_<%= layerID %>_0" class="pull-right brushes">
+		<span id="stroke_<%= layer.id %>_0" class="pull-right brushes">
 			<%- partial("_form_weight.ejs",{weight: style.stroke.weight}) %> 
 			<%- partial("_form_color.ejs",{color: style.stroke.color}) %> 
-			<%- partial("_form_opacity.ejs",{opacity: style.stroke.opacity, layerID: layerID, categoryID: 0}) %>
+			<%- partial("_form_opacity.ejs",{opacity: style.stroke.opacity, layerID: layer.id, categoryID: 0}) %>
 		</span>
 	</div>
 </div>

@@ -5,6 +5,24 @@
 
 #map_sidebar {
 	overflow-y: auto;
+	background-image: url("/images/fabric_plaid.png");
+  background-repeat: repeat;
+  background-position: 0 0;
+  /*border-right: 1px solid #999999;*/
+  /*-webkit-box-shadow: inset 0 0 2px 2px rgba(0,0,0,0.075);*/
+  /*-moz-box-shadow: inset 0 0 2px 2px rgba(0,0,0,0.075);*/
+  /*box-shadow: inset 0 0 2px 2px rgba(0,0,0,0.075);*/
+  box-shadow: -1px 1px 8px 1px #999999 inset;
+  /*box-shadow: h-shadow v-shadow blur spread color inset;*/
+}
+
+#map_layers .panel {
+	border: 1px solid #BBBBBB;
+}
+
+#map_layers .panel .panel-heading{
+	/*background-color: ;*/
+	color: #666666;
 }
 
 .leaflet-popup-content {

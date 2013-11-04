@@ -10,7 +10,7 @@ generateLayerStyle = function (styleGuidelines) {
 
 stylePoint = function (styleGuidelines) {
 	var type = styleGuidelines.type;
-	attributes = undefined;
+	var attributes = undefined;
 	if (type === "simple") {
 		attributes = {
 			radius: 3.0,
@@ -21,6 +21,23 @@ stylePoint = function (styleGuidelines) {
 		};
 	};
 	// Category
+	if (type === "category") {
+		var stroke = _.isEmpty(styleGuidelines.stroke) ? { color: "#999999", opacity: 1.0, weight: 2.0} : styleGuidelines.stroke;
+		var fill = _.isEmpty(styleGuidelines.fill) ? {opacity: 0.8} : styleGuidelines.fill;
+		var radius = _.isEmpty(styleGuidelines.radius) ? 3.0 : styleGuidelines.radius;
+		attributes = {
+			field: styleGuidelines.field,
+			fieldValues: styleGuidelines.fieldValues,
+			fieldValuesCount: styleGuidelines.fieldValuesCount,
+			fieldHeaders: styleGuidelines.fieldHeaders,
+			radius: radius,
+			fill: fill,
+			stroke: stroke,
+			fieldFillColor: getCategoryFillColors(styleGuidelines.fieldValues.length),
+			operation: undefined,
+			label: undefined
+		};
+	};
 
 	// Chloropleth
 
@@ -30,7 +47,7 @@ stylePoint = function (styleGuidelines) {
 
 stylePolygon = function (styleGuidelines) {
 	var type = styleGuidelines.type;
-	attributes = undefined;
+	var attributes = undefined;
 	if (type === "simple") {
 		attributes = {
 			fill: { color: "#0000FF", opacity: 0.2},
@@ -41,12 +58,15 @@ stylePolygon = function (styleGuidelines) {
 	};
 	// Category
 	if (type === "category") {
+		var stroke = _.isEmpty(styleGuidelines.stroke) ? { color: "#000000", opacity: 1.0, weight: 1.0} : styleGuidelines.stroke;
+		var fill = _.isEmpty(styleGuidelines.fill) ? {opacity: 0.5} : styleGuidelines.fill;
 		attributes = {
 			field: styleGuidelines.field,
 			fieldValues: styleGuidelines.fieldValues,
+			fieldValuesCount: styleGuidelines.fieldValuesCount,
 			fieldHeaders: styleGuidelines.fieldHeaders,
-			fill: {opacity: 0.2},
-			stroke: { color: "#0000FF", opacity: 1.0, weight: 1.0},
+			fill: fill,
+			stroke: stroke,
 			fieldFillColor: getCategoryFillColors(styleGuidelines.fieldValues.length),
 			operation: undefined,
 			label: undefined
@@ -60,7 +80,7 @@ stylePolygon = function (styleGuidelines) {
 
 styleLine = function (styleGuidelines) {
 	var type = styleGuidelines.type;
-	attributes = undefined;
+	var attributes = undefined;
 	if (type === "simple") {
 		attributes = {
 			stroke: { color: "#0000FF", opacity: 1.0, weight: 1.0},
@@ -69,6 +89,19 @@ styleLine = function (styleGuidelines) {
 		};
 	};
 	// Category
+	if (type === "category") {
+		var stroke = _.isEmpty(styleGuidelines.stroke) ? {opacity: 1.0, weight: 5.0} : styleGuidelines.stroke;
+		attributes = {
+			field: styleGuidelines.field,
+			fieldValues: styleGuidelines.fieldValues,
+			fieldValuesCount: styleGuidelines.fieldValuesCount,
+			fieldHeaders: styleGuidelines.fieldHeaders,
+			stroke: stroke,
+			fieldFillColor: getCategoryFillColors(styleGuidelines.fieldValues.length),
+			operation: undefined,
+			label: undefined
+		};
+	};
 
 	// Chloropleth
 

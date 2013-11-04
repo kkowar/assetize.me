@@ -14,15 +14,15 @@
         <%- partial("_point_" + type + "_form.ejs",{style: layer.styles.simple, layerID: layer.id}) %>
       <% } %>
       <% if (layer.geometryType === "Polygon") { %>
-        <%- partial("_polygon_" + type + "_form.ejs",{style: layer.styles.simple, layerID: layer.id}) %>
+        <%- partial("_polygon_" + type + "_form.ejs",{layer: layer}) %>
       <% } %>
       <% if (layer.geometryType === "LineString") { %>
-        <%- partial("_line_" + type + "_form.ejs",{style: layer.styles.simple, layerID: layer.id}) %>
+        <%- partial("_line_" + type + "_form.ejs",{layer: layer}) %>
       <% } %>
     </div>
     <div style="padding-top: 5px; padding-bottom: 5px;">
       <small class="text-muted">
-        <span class="badge"><%= layer.totalFeatures %></span>
+        <span class="badge" style="font-size: 10px; width: 40px; background-color: white; position: relative; top: -1px; left: -5px; border: 1px solid #666666; color: #666666;"><%= layer.totalFeatures %></span>
         Showing All Features
       </small>
       <span id="layer_<%= layer.id %>_remove" class="remove-layer glyphicon glyphicon-remove pull-right" style="color: red;"></span>

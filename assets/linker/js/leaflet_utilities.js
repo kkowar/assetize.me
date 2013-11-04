@@ -106,6 +106,21 @@ generateGeoJSONLayer = function (geoJSON,styles) {
         };
       };
 
+      if (styles.type === "category") {
+        var style = styles.category;
+        var styleAttributes = {
+          radius: style.radius,
+          fillOpacity: style.fill.opacity,
+          color: style.stroke.color,
+          opacity: style.stroke.opacity,
+          weight: style.stroke.weight
+        };
+        fieldFills = {};
+        _.each(style.fieldValues,function(fieldValue,index){
+          fieldFills[fieldValue] = style.fieldFillColor[index];
+        });
+      };
+
       result = L.geoJson(geoJSON, {
         style: function (feature) {
           // Figure out what to do here if anything.
@@ -114,6 +129,9 @@ generateGeoJSONLayer = function (geoJSON,styles) {
           layer.bindPopup(generatePopupHTML(feature.properties));
         },
         pointToLayer: function (feature, latlng) {
+          if (styles.type === "category") {
+            styleAttributes.fillColor = _.isEmpty(fieldFills[feature.properties[style.field]]) ? "#CCCCCC" : fieldFills[feature.properties[style.field]];
+          };
           return L.circleMarker(latlng, styleAttributes);
         }
       });
@@ -131,8 +149,24 @@ generateGeoJSONLayer = function (geoJSON,styles) {
         }
       };
 
+      if (styles.type === "category") {
+        var style = styles.category;
+        var styleAttributes = {
+          color: style.stroke.color,
+          opacity: style.stroke.opacity,
+          weight: style.stroke.weight
+        };
+        fieldFills = {};
+        _.each(style.fieldValues,function(fieldValue,index){
+          fieldFills[fieldValue] = _.isEmpty(style.fieldFillColor[index]) ? "#ff0000" : style.fieldFillColor[index]
+        });
+      };
+
       result = L.geoJson(geoJSON, {
           style: function (feature) {
+            if (styles.type === "category") {
+              styleAttributes.color = _.isEmpty(fieldFills[feature.properties[style.field]]) ? "#CCCCCC" : fieldFills[feature.properties[style.field]];
+            };
             return styleAttributes;
           },
           onEachFeature: function (feature, layer) {
@@ -171,7 +205,7 @@ generateGeoJSONLayer = function (geoJSON,styles) {
       result = L.geoJson(geoJSON, {
           style: function (feature) {
             if (styles.type === "category") {
-              styleAttributes.fillColor = fieldFills[feature.properties[style.field]];
+              styleAttributes.fillColor = _.isEmpty(fieldFills[feature.properties[style.field]]) ? "#CCCCCC" : fieldFills[feature.properties[style.field]];
             };
             return styleAttributes;
           },
