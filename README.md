@@ -1,2 +1,4 @@
-# openinfrastructr
-### a Sails application
+# assetize.me
+### Open Source Municipal Infrastructure Management
+
+More to come soon..... 
