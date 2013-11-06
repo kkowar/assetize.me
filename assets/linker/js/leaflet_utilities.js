@@ -240,41 +240,72 @@ generatePropertiesArray = function(properties) {
 };
 
 updateLayerColor = function(layerID,newColor,action,subLayerID,layers) {
+
   $.ajax({url: "layer/find/" + layerID}).done(function(data){
+
     var styleType = data.styles.type;
+    var geometryType = data.geometryType;
+    console.log(geometryType);
     if (styleType === "category") {
-      if (action === "fill") {data.styles.category.fieldFillColor[subLayerID] = newColor;};
-      if (action === "stroke") {data.styles.category.stroke.color = newColor;};
+      if ((geometryType === "Point") || (geometryType === "Polygon")) {
+        console.log("Store Category Point or Polygon: " + action);
+        if (action === "fill") {data.styles.category.fieldFillColor[subLayerID] = newColor;};
+        if (action === "stroke") {data.styles.category.stroke.color = newColor;};
+      };
+      if ((geometryType === "LineString") || (geometryType === "MultiLineString")) {
+        data.styles.category.fieldFillColor[subLayerID] = newColor;
+      };
     }; 
+
     if (styleType === "simple") {
       if (action === "fill") {data.styles.simple.fill.color = newColor;};
       if (action === "stroke") {data.styles.simple.stroke.color = newColor;};
     };
+
     $.ajax({url: "layer/update/" + layerID, data: data}).done(function(data){
-      // console.log("Success");
-      // console.log(data);
-      // console.log(styleType);
-      if ((styleType === "category") && (action === "fill")) {
+
+      if (styleType === "category") {
+
         fieldFills = {};
         _.each(data.styles.category.fieldValues,function(fieldValue,index){
           fieldFills[fieldValue] = data.styles.category.fieldFillColor[index];
         });
-        _.each(layers[data.id].layer._layers,function(layer){
-          var fillColor = fieldFills[layer.feature.properties[data.styles.category.field]];
-          layer.setStyle({fillColor: fillColor});
-          // console.log(fillColor);
-          // console.log(layer.feature.properties[data.styles.category.field]);
-        });
+        
+        if (action === "fill") {
+          console.log("Fill");
+          _.each(layers[data.id].layer._layers,function(layer){
+            var fillColor = fieldFills[layer.feature.properties[data.styles.category.field]];
+            layer.setStyle({fillColor: fillColor});
+          });
+        };
+
+        if (action === "stroke") {
+          if ((geometryType === "Point") || (geometryType === "Polygon")) {
+            console.log("Point Stroke");
+            var color = data.styles.category.stroke.color;
+            console.log(color);
+            _.each(layers[data.id].layer._layers,function(layer){
+              layer.setStyle({color: color});
+            });
+          };
+
+          if ((geometryType === "LineString") || (geometryType === "MultiLineString")) {
+            _.each(layers[data.id].layer._layers,function(layer){
+              var color = fieldFills[layer.feature.properties[data.styles.category.field]];
+              layer.setStyle({color: color});
+            });
+          };
+        };
+
       };
-      if ((styleType === "category") && (action === "stroke")) {
-        layers[data.id].layer.setStyle({color: data.styles.category.stroke.color});
-      };
+
       if (styleType === "simple") {
         var style = undefined;
         if (action === "fill") {style = {fillColor: data.styles.simple.fill.color}};
         if (action === "stroke") {style = {color: data.styles.simple.stroke.color}};
         layers[layerID].layer.setStyle(style);
-      }
+      };
+
     });
   });
 };

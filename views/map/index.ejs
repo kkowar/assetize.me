@@ -125,6 +125,20 @@
     });
   }
 
+  var setupLayerSorting = function () {
+    $(".layers-sortable").sortable({
+      axis: 'y',
+      handle: '.drag-handle',
+      cursor: 'move'
+    });
+    $(".layers-sortable").disableSelection();
+    $(".layers-sortable").on("sortupdate",function(e,ui){
+      var arrLayersID = $(".layers-sortable").sortable("toArray");
+      var scrubbedIDs = _.map(arrLayersID,function(id){return id.split("_")[1]});
+      updateLayerDrawOrder(scrubbedIDs,gLayers,gMap);
+    });
+  };
+
   var setupLayerStyleDialogs = function () {
     setupLayerStyleTypeDropDown();
     setupColorPicker();
@@ -156,27 +170,13 @@
 
     $(document).on("change","input.colorPicker",function(e){
       var target = $(e.currentTarget);
-      // var targetSplit = target.parent().parent().attr("id").split("_");
-      // console.log(targetSplit);
-      var action = target.parent().parent().attr("id").split("_")[0];
-      var layerID = target.parent().parent().attr("id").split("_")[1];
-      var subLayerID = target.parent().parent().attr("id").split("_")[2];
+      var targetSplit = target.parent().parent().attr("id").split("_");
+      var action = targetSplit[0];
+      var layerID = targetSplit[1];
+      var subLayerID = targetSplit[2];
       var newColor = e.target.value;
+      console.log([action,layerID,subLayerID,newColor]);
       updateLayerColor(layerID,newColor,action,subLayerID,gLayers);
-    });
-  };
-
-  var setupLayerSorting = function () {
-    $(".layers-sortable").sortable({
-      axis: 'y',
-      handle: '.drag-handle',
-      cursor: 'move'
-    });
-    $(".layers-sortable").disableSelection();
-    $(".layers-sortable").on("sortupdate",function(e,ui){
-      var arrLayersID = $(".layers-sortable").sortable("toArray");
-      var scrubbedIDs = _.map(arrLayersID,function(id){return id.split("_")[1]});
-      updateLayerDrawOrder(scrubbedIDs,gLayers,gMap);
     });
   };
 
