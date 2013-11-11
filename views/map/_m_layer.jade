@@ -1,0 +1,48 @@
+include _m_point_forms
+include _m_polygon_forms
+include _m_line_forms
+
+mixin layer(layer)
+  .panel.panel-default.layer-sortable(id="layer_#{layer.id}" style="margin-bottom: 10px;")
+    .panel-heading
+      small
+        - var checked = layer.visible === "true" ? true : false
+        input(type="checkbox" value="#{layer.id}" checked="#{checked}")
+        &nbsp;
+        = _.str.truncate(layer.name,30)
+      span.glyphicon.glyphicon-th.pull-right.drag-handle(style="color: #999;")
+    .panel-body(style="padding-top: 0px; padding-bottom: 0px;")
+      .layer-style-type-dropdown-container(style="margin: 0px; padding-top: 5px; padding-right: 5px; width: 100%; position: relative; left: -5px;")
+        select.layer-style-type-dropdown(style="width: 100%;")
+          - var simple = layer.styles.type === "simple" ? true : false
+          option(value="Simple_#{layer.id}_#{layer.fcID}" selected=simple)
+            | Simple
+          - var category = layer.styles.type === "category" ? true : false
+          option(value="Category_#{layer.id}_#{layer.fcID}" selected=category)
+            | Category
+      .layer-forms
+        - var type = layer.styles.type
+        - if (layer.geometryType === "Point")
+          - if (type === "simple")
+            +point_simple_form(layer)
+          - if (type === "category")
+            //- +point_category_form(layer)
+        - if (layer.geometryType === "Polygon")
+          - if (type === "simple")
+            +polygon_simple_form(layer)
+          - if (type === "category")
+            +polygon_category_form(layer)
+        - if (layer.geometryType === "LineString")
+          - if (type === "simple")
+            +line_simple_form(layer)
+          - if (type === "category")
+            +line_category_form(layer)
+      div(style="padding-top: 5px; padding-bottom: 10px;")
+        small.text-muted
+          span.badge(style="font-size: 10px; width: 40px; background-color: white; position: relative; top: -1px; left: -5px; border: 1px solid #666666; color: #666666;")
+            = layer.totalFeatures
+          span.description
+            &nbsp;
+            &nbsp;
+            | Showing All Features
+        span.remove-layer.glyphicon.glyphicon-remove.pull-right(id="remove-layer glyphicon glyphicon-remove pull-rightlayer_#{layer.id}_remove" style="color: red;")

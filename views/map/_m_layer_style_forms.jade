@@ -1,0 +1,29 @@
+mixin form_color(color)
+  .form_color
+    input.colorPicker(type="text" value="#{color}")
+
+mixin form_opacity(opacity,layerID,categoryID)
+  div.form_spinner.form_opacity(id="opacity_#{layerID}_#{categoryID}")
+    input.value(value="#{parseFloat(opacity).toFixed(1)}" style="width:25px!important")
+    a.plus(href="#") +
+    a.minus(href="#") -
+
+mixin form_weight(weight)
+  .form_spinner.form_weight
+    input.value(value="#{parseFloat(weight).toFixed(1)}" style="width:25px!important")
+    a.plus(href="#") +
+    a.minus(href="#") -
+
+mixin form_radius(radius)
+  .form_spinner.form_radius
+    input.value(value="#{parseFloat(radius).toFixed(1)}" style="width:25px!important")
+    a.plus(href="#") +
+    a.minus(href="#") -
+
+mixin style_field_dropdown(fields,selectedField,layer)
+  div(style="padding-top: 5px;")
+    select.layer-style-field-dropdown(id="field_#{layer.id}_#{layer.fcID}")
+      - each field in fields
+        - var selected = (field === selectedField) ? true : false
+        option(selected=selected)
+          = field

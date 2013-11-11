@@ -21,48 +21,52 @@ module.exports = {
     FeatureCollection.find().done(function(err,arrFC){
       if (err) return next(err);
       if (!arrFC) return next();
-      // var fc = arrFC[0];
-      // var fcID = fc.id;
       res.view({featureCollections: arrFC, currentView: req.url});
     });
   },
 
-  create: function(req,res) {
+  upload: function(req,res) {
     var file = req.files.files[0];
-    // console.log(req.files);
-    // console.log(file);
-    // console.log(file.name);
-    // console.log(file.path);
     var fileExt = _.last(file.name.split("."));
     var fileName = _.first(file.name.split("."));
-    // todo: create callbacks on the import function to return the featureclass object.
     if (fileExt === "geojson") {
       importGeoJSON(fileName,file.path);
     } else if (fileExt === "csv") {
       importCSV2JSON(fileName,file.path);
     };
-    res.json({message: "success"});
-    // todo: handle a way to update the page.
-    // res.redirect("/layer");
   },
 
 	destroy: function(req,res) {
 		var fcID = req.params.id;
-		console.log(fcID);
 		FeatureCollection.destroy({"id": fcID}).done(function(err,arrFC){
 			if (err) return next(err);
 			if (!arrFC) return next();
+
+      FeatureCollection.publishDestroy(fcID);
+
 			Feature.destroy({"fcID": fcID}).done(function(err,arrF){
 				if (err) return next(err);
 				if (!arrF) return next();
+
 				Layer.destroy({"fcID": fcID}).done(function(err,arrL){
 					if (err) return next(err);
 					if (!arrL) return next();
-					res.json({message: "success"});
 				});
+
 			});
+
 		});
 	},
+
+  subscribe: function(req,res) {
+    FeatureCollection.subscribe(req.socket);
+    FeatureCollection.find().done(function(err,foundUsers){
+      if (err) {return next(err)};
+      if (!foundUsers) return next();
+      FeatureCollection.subscribe(req.socket,foundUsers);
+      res.send({message: "Subscribed to FeatureCollection"});      
+    });
+  },
 
   /**
    * Overrides for the settings in `config/controllers.js`

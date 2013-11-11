@@ -15,7 +15,6 @@ importCSV2JSON = function (name,fileName) {
                            "properties": jsonProperties
                          });
       });
-      // console.log(fc);
       createFeatureCollection(name,fc);
     });
 };

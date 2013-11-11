@@ -1,0 +1,64 @@
+include _m_layer_style_forms
+
+mixin polygon_simple_form(layer)
+	- var style = layer.styles.simple
+	.layer-form
+		.row
+			span.description
+				| Polygon Fill
+			span.pull-right.brushes(id="fill_#{layer.id}_0")
+				+form_color(style.fill.color)
+				&nbsp;
+				+form_opacity(style.fill.opacity,layer.id,0)
+		.row
+			span.description
+				| Polygon Stroke
+			span.pull-right.brushes(id="stroke_#{layer.id}_0")
+				+form_weight(style.stroke.weight)
+				&nbsp;
+				+form_color(style.stroke.color)
+				&nbsp;
+				+form_opacity(style.stroke.opacity,layer.id,0)
+
+mixin polygon_category_form(layer)
+	- var style = layer.styles.category
+	.layer-form
+		.row
+			span.description Column
+			span.pull-right.brushes(id="layer_#{layer.id}_0")
+				+style_field_dropdown(style.fieldHeaders,style.field,layer)
+		.row
+			span.description
+				| Polygon Fill
+			span.pull-right.brushes(id="fill_#{layer.id}_0")
+				+form_opacity(style.fill.opacity,layer.id,0)
+		.row
+			span.description
+				| Polygon Stroke
+			span.pull-right.brushes(id="stroke_#{layer.id}_0")
+				+form_weight(style.stroke.weight)
+				&nbsp;
+				+form_color(style.stroke.color)
+				&nbsp;
+				+form_opacity(style.stroke.opacity,layer.id,0)
+		- each fieldValue,index in style.fieldValuesCount
+			.row
+				span.badge(style="font-size: 10px; width: 40px; background-color: white; position: relative; top: 4px; border: 1px solid #666666; color: #666666;")
+					= fieldValue[1]
+				span.description
+					&nbsp;
+					&nbsp;
+					= _.str.truncate(fieldValue[0],15)
+				span.pull-right.brushes(id="fill_#{layer.id}_#{index}")
+					+form_color(style.fieldFillColor[index])
+		- if (style.fieldValuesOthersCount != 0)
+			.row
+				span.badge(style="font-size: 10px; width: 40px; background-color: white; position: relative; top: 4px; border: 1px solid #666666; color: #666666;")
+					= style.fieldValuesOthersCount
+				span.description
+					&nbsp;
+					&nbsp;
+					| Others
+				span.pull-right.brushes(id="fill_#{layer.id}_others")
+					+form_color(style.fieldOthersFill)
+

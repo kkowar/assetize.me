@@ -29,8 +29,14 @@
       log('New comet message received :: ', message);
       //////////////////////////////////////////////////////
 
-    });
+      if (("featurecollection" === message.model) && ("create" === message.verb)) {
+        $("#tbody_feature_collection").append(message.data.html);
+      };
+      if (("featurecollection" === message.model) && ("destroy" === message.verb)) {
+        $("#feature_collection_" + message.id).remove();
+      };
 
+    });
 
     ///////////////////////////////////////////////////////////
     // Here's where you'll want to add any custom logic for
@@ -45,6 +51,11 @@
     );
     ///////////////////////////////////////////////////////////
 
+    socket.get("/featurecollection/subscribe",function(response) {
+      console.log(response);
+    });
+
+    console.log(socket);
 
   });
 

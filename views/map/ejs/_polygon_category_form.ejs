@@ -7,14 +7,13 @@
 		</span>
 	</div>
 	<div class="row">
-		<span class="description">Point Fill</span>
+		<span class="description">Polygon Fill</span>
 		<span id="fill_<%= layer.id %>_0" class="pull-right brushes">
-			<%- partial("_form_radius.ejs",{radius: style.radius}) %> 
 			<%- partial("_form_opacity.ejs",{opacity: style.fill.opacity, layerID: layer.id, categoryID: 0}) %>
 		</span>
 	</div>
 	<div class="row">
-		<span class="description">Point Stroke</span> 
+		<span class="description">Polygon Stroke</span> 
 		<span id="stroke_<%= layer.id %>_0" class="pull-right brushes">
 			<%- partial("_form_weight.ejs",{weight: style.stroke.weight}) %> 
 			<%- partial("_form_color.ejs",{color: style.stroke.color}) %> 
@@ -30,4 +29,13 @@
 			</span>
 		</div>
 	<% }); %>
+	<% if (style.fieldValuesOthersCount !== 0) { %>
+		<div class="row">
+			<span class="badge" style="font-size: 10px; width: 40px; background-color: white; position: relative; top: 4px; border: 1px solid #666666; color: #666666;"><%= style.fieldValuesOthersCount %></span>&nbsp;
+			<span class="description">Others</span>
+			<span id="fill_<%= layer.id %>_others" class="pull-right brushes">
+				<%- partial("_form_color.ejs",{color: style.fieldOthersFill}) %>
+			</span>
+		</div>
+	<% } %>
 </div>

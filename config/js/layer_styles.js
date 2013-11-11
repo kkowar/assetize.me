@@ -30,6 +30,8 @@ stylePoint = function (styleGuidelines) {
 			fieldValues: styleGuidelines.fieldValues,
 			fieldValuesCount: styleGuidelines.fieldValuesCount,
 			fieldHeaders: styleGuidelines.fieldHeaders,
+			fieldValuesOthersCount: styleGuidelines.fieldValuesOthersCount,
+			fieldOthersFill: styleGuidelines.fieldOthersFill,
 			radius: radius,
 			fill: fill,
 			stroke: stroke,
@@ -50,8 +52,8 @@ stylePolygon = function (styleGuidelines) {
 	var attributes = undefined;
 	if (type === "simple") {
 		attributes = {
-			fill: { color: "#0000FF", opacity: 0.2},
-			stroke: { color: "#0000FF", opacity: 1.0, weight: 1.0},
+			fill: { color: "#0000FF", opacity: 0.5},
+			stroke: { color: "#000000", opacity: 1.0, weight: 1.0},
 			operation: undefined,
 			label: undefined
 		};
@@ -65,6 +67,8 @@ stylePolygon = function (styleGuidelines) {
 			fieldValues: styleGuidelines.fieldValues,
 			fieldValuesCount: styleGuidelines.fieldValuesCount,
 			fieldHeaders: styleGuidelines.fieldHeaders,
+			fieldValuesOthersCount: styleGuidelines.fieldValuesOthersCount,
+			fieldOthersFill: styleGuidelines.fieldOthersFill,
 			fill: fill,
 			stroke: stroke,
 			fieldFillColor: getCategoryFillColors(styleGuidelines.fieldValues.length),
@@ -83,19 +87,21 @@ styleLine = function (styleGuidelines) {
 	var attributes = undefined;
 	if (type === "simple") {
 		attributes = {
-			stroke: { color: "#0000FF", opacity: 1.0, weight: 1.0},
+			stroke: { color: "#0000FF", opacity: 1.0, weight: 3.0},
 			operation: undefined,
 			label: undefined
 		};
 	};
 	// Category
 	if (type === "category") {
-		var stroke = _.isEmpty(styleGuidelines.stroke) ? {opacity: 1.0, weight: 5.0} : styleGuidelines.stroke;
+		var stroke = _.isEmpty(styleGuidelines.stroke) ? {opacity: 1.0, weight: 3.0} : styleGuidelines.stroke;
 		attributes = {
 			field: styleGuidelines.field,
 			fieldValues: styleGuidelines.fieldValues,
 			fieldValuesCount: styleGuidelines.fieldValuesCount,
 			fieldHeaders: styleGuidelines.fieldHeaders,
+			fieldValuesOthersCount: styleGuidelines.fieldValuesOthersCount,
+			fieldOthersFill: styleGuidelines.fieldOthersFill,
 			stroke: stroke,
 			fieldFillColor: getCategoryFillColors(styleGuidelines.fieldValues.length),
 			operation: undefined,
@@ -112,6 +118,6 @@ styleLine = function (styleGuidelines) {
 getCategoryFillColors = function(numCategories) { 
 	var defaultColors = ['#A6CEE3','#1F78B4','#B2DF8A','#33A02C','#FB9A99','#E31A1C',
                        '#FDBF6F','#FF7F00','#CAB2D6','#6A3D9A','#ffffff','#000000'];
-  var defaultOthers = '#666666';
+  // var defaultOthers = '#666666';
   return defaultColors.slice(0,numCategories);
 };

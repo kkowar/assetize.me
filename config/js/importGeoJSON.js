@@ -1,17 +1,15 @@
 importGeoJSON = function (name,fileName) {
   var fs = require('fs');
-  var geoJSON = fs.readFileSync(fileName,'utf8');
-  // Parse JSON File
-  var fc = JSON.parse(geoJSON);
-  // var timeStamp = new Date().getTime();
-  // console.log(fc.type);
-  // console.log(fc.features.length);
-  // console.log(fc.features[1]);
-  // fc.features = fc.features.slice(0,200);
-  createFeatureCollection(name,fc);
+  fs = require('fs')
+  fs.readFile(fileName, 'utf8', function (err,data) {
+    if (err) {return console.log(err);};
+    var fc = JSON.parse(data);
+    createFeatureCollection(name,fc);
+  });  
 };
 
 createFeatureCollection = function (name,fc) {
+  var jade = require('jade');
   var fcProperties = [];
   _.each(fc.features[0].properties,function(value,key){
     fcProperties.push({"name": key, "type": ""});
@@ -26,11 +24,17 @@ createFeatureCollection = function (name,fc) {
                geometryType: geometryType, 
                totalFeatures: fc.features.length
               };
-  FeatureCollection.create(newFC).done(function (err,feature_collection) {
+  FeatureCollection.create(newFC).done(function (err,createdFC) {
     if (err) return console.log(err);
-    feature_collection.save(function(err, feature_collection) {
+    createdFC.save(function(err, savedFC) {
       if (err) return console.log(err);
-      var fcID = feature_collection.id;
+      jade.renderFile(__dirname + '/../../views/featurecollection/_fc_row.jade',{fc: savedFC}, function (err, html) {
+        if (err) throw err;
+        console.log("renderFile");
+        console.log(html);
+        FeatureCollection.publishCreate({id: savedFC.id, featureCollection: savedFC, html: html});
+      });
+      var fcID = savedFC.id;
       _.each(fc.features,function (feature,index) {
         createFeature(feature,fcID,index);
       });
@@ -39,7 +43,6 @@ createFeatureCollection = function (name,fc) {
 };
 
 createFeature = function (feature,fcID,index) {
-  // var fID = (feature.id === undefined) ? "" : feature.id;
   var f = {
     fcID: fcID,
     fID: index,

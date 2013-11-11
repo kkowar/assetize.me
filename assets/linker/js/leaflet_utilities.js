@@ -130,7 +130,7 @@ generateGeoJSONLayer = function (geoJSON,styles) {
         },
         pointToLayer: function (feature, latlng) {
           if (styles.type === "category") {
-            styleAttributes.fillColor = _.isEmpty(fieldFills[feature.properties[style.field]]) ? "#CCCCCC" : fieldFills[feature.properties[style.field]];
+            styleAttributes.fillColor = _.isEmpty(fieldFills[feature.properties[style.field]]) ? style.fieldOthersFill : fieldFills[feature.properties[style.field]];
           };
           return L.circleMarker(latlng, styleAttributes);
         }
@@ -158,14 +158,14 @@ generateGeoJSONLayer = function (geoJSON,styles) {
         };
         fieldFills = {};
         _.each(style.fieldValues,function(fieldValue,index){
-          fieldFills[fieldValue] = _.isEmpty(style.fieldFillColor[index]) ? "#ff0000" : style.fieldFillColor[index]
+          fieldFills[fieldValue] = style.fieldFillColor[index];
         });
       };
 
       result = L.geoJson(geoJSON, {
           style: function (feature) {
             if (styles.type === "category") {
-              styleAttributes.color = _.isEmpty(fieldFills[feature.properties[style.field]]) ? "#CCCCCC" : fieldFills[feature.properties[style.field]];
+              styleAttributes.color = _.isEmpty(fieldFills[feature.properties[style.field]]) ? style.fieldOthersFill : fieldFills[feature.properties[style.field]];
             };
             return styleAttributes;
           },
@@ -205,7 +205,7 @@ generateGeoJSONLayer = function (geoJSON,styles) {
       result = L.geoJson(geoJSON, {
           style: function (feature) {
             if (styles.type === "category") {
-              styleAttributes.fillColor = _.isEmpty(fieldFills[feature.properties[style.field]]) ? "#CCCCCC" : fieldFills[feature.properties[style.field]];
+              styleAttributes.fillColor = _.isEmpty(fieldFills[feature.properties[style.field]]) ? style.fieldOthersFill : fieldFills[feature.properties[style.field]];
             };
             return styleAttributes;
           },
@@ -247,13 +247,16 @@ updateLayerColor = function(layerID,newColor,action,subLayerID,layers) {
     var geometryType = data.geometryType;
     console.log(geometryType);
     if (styleType === "category") {
-      if ((geometryType === "Point") || (geometryType === "Polygon")) {
-        console.log("Store Category Point or Polygon: " + action);
-        if (action === "fill") {data.styles.category.fieldFillColor[subLayerID] = newColor;};
-        if (action === "stroke") {data.styles.category.stroke.color = newColor;};
-      };
-      if ((geometryType === "LineString") || (geometryType === "MultiLineString")) {
-        data.styles.category.fieldFillColor[subLayerID] = newColor;
+      if (subLayerID !== "others") {
+        if ((geometryType === "Point") || (geometryType === "Polygon")) {
+          if (action === "fill") {data.styles.category.fieldFillColor[subLayerID] = newColor;};
+          if (action === "stroke") {data.styles.category.stroke.color = newColor;};
+        };
+        if ((geometryType === "LineString") || (geometryType === "MultiLineString")) {
+          data.styles.category.fieldFillColor[subLayerID] = newColor;
+        };
+      } else {
+        data.styles.category.fieldOthersFill = newColor;
       };
     }; 
 
@@ -263,25 +266,25 @@ updateLayerColor = function(layerID,newColor,action,subLayerID,layers) {
     };
 
     $.ajax({url: "layer/update/" + layerID, data: data}).done(function(data){
-
       if (styleType === "category") {
 
         fieldFills = {};
         _.each(data.styles.category.fieldValues,function(fieldValue,index){
           fieldFills[fieldValue] = data.styles.category.fieldFillColor[index];
         });
-        
+
         if (action === "fill") {
-          console.log("Fill");
           _.each(layers[data.id].layer._layers,function(layer){
             var fillColor = fieldFills[layer.feature.properties[data.styles.category.field]];
+            fillColor = (fillColor === undefined) ? data.styles.category.fieldOthersFill : fillColor
+            // console.log(fillColor);
+            // layer.setStyle({fillColor: fillColor});
             layer.setStyle({fillColor: fillColor});
           });
         };
 
         if (action === "stroke") {
           if ((geometryType === "Point") || (geometryType === "Polygon")) {
-            console.log("Point Stroke");
             var color = data.styles.category.stroke.color;
             console.log(color);
             _.each(layers[data.id].layer._layers,function(layer){
@@ -292,6 +295,7 @@ updateLayerColor = function(layerID,newColor,action,subLayerID,layers) {
           if ((geometryType === "LineString") || (geometryType === "MultiLineString")) {
             _.each(layers[data.id].layer._layers,function(layer){
               var color = fieldFills[layer.feature.properties[data.styles.category.field]];
+              color = (color === undefined) ? data.styles.category.fieldOthersFill : color
               layer.setStyle({color: color});
             });
           };

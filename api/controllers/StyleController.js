@@ -50,7 +50,6 @@ module.exports = {
             if (!categoryExists && !field) {field = fieldHeaders[0]};         
             if (categoryExists && !field) {field = foundLayer.styles.category.field};       
             var fieldValues = _.map(foundFeatures,function(feature){return feature.properties[field]});
-            // var uniqFieldValues = _.map(_.uniq(fieldValues),function(fV){return _.isEmpty(fV) ? "null" : fV});
             var fieldValuesCountBy = _.countBy(fieldValues, function(fV){return fV;});
             var sortable = [];
             for (var fV in fieldValuesCountBy) {
@@ -58,10 +57,9 @@ module.exports = {
               sortable.sort(function(a, b) {return a[1] - b[1]})
             }
             var fieldValuesSortedCount = sortable.reverse();
-            fieldValuesSortedCount = fieldValuesSortedCount.slice(0,9);
+            fieldValuesSortedCount = fieldValuesSortedCount.slice(0,11);
+            fieldValuesOthersCount = foundFeatures.length - _.reduce(fieldValuesSortedCount,function(memo,fV){return memo + fV[1]},0);
             var uniqFieldValues = _.map(fieldValuesSortedCount,function(fV){return fV[0]});
-            // console.log(fieldValuesSortedCount);
-            // console.log(uniqFieldValues)
             var stroke = !categoryExists ? undefined : foundLayer.styles.category.stroke;
             var fill = !categoryExists ? undefined : foundLayer.styles.category.fill;
             var radius = !categoryExists ? undefined : foundLayer.styles.category.radius;
@@ -73,6 +71,8 @@ module.exports = {
                 fieldHeaders: fieldHeaders,
                 fieldValues: uniqFieldValues,
                 fieldValuesCount: fieldValuesSortedCount,
+                fieldValuesOthersCount: fieldValuesOthersCount,
+                fieldOthersFill: "#999999",
                 stroke: stroke,
                 fill: fill,
                 radius: radius
@@ -83,7 +83,6 @@ module.exports = {
               if (err) return console.log(err);
               if (!savedLayer) return;
               console.log("Render Geometery Category: " + geometryType);
-              // res.view('map/_polygon_category_form', {layer: savedLayer,layout: null});
               if (geometryType === "Point") {res.view('map/_point_category_form', {layer: savedLayer, layout: null})};
               if (geometryType === "Polygon") {res.view('map/_polygon_category_form', {layer: savedLayer, layout: null})};
               if (geometryType === "LineString" || geometryType === "MultiLineString") {res.view('map/_line_category_form', {layer: savedLayer, layout: null})};

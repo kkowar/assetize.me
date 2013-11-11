@@ -26,6 +26,7 @@ module.exports = {
   },
 
   merge: function(req,res) {
+    console.log("begin merge");
     var targetA = req.param("targetA");
     var targetB = req.param("targetB");
     var mergeTableName = req.param("mergeTableName");
