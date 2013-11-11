@@ -1,0 +1,8 @@
+mixin table_rows(rows)
+  - each row in rows
+    tr
+      td
+        = row.fID
+      - each property in row.properties
+        td
+          = property

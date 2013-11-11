@@ -18,18 +18,15 @@
 module.exports = {
     
   show: function(req,res) {
-    var id = req.params["id"]
-    console.log(req.params);
-    console.log(id);
-    FeatureCollection.find({"id": id}).limit(1).done(function(err,arrFC){
+    var id = req.params.id;
+    FeatureCollection.findOne({"id": id}).limit(1).done(function(err,foundFC){
       if (err) return next(err);
-      if (_.isEmpty(arrFC)) {
+      if (!foundFC) {
         res.view({layerTableHeaders: [], layerTableRows: [], fcID: "", currentView: req.url});
         return;
       };
-      var fc = arrFC[0];
-      console.log(fc);
-      var fcID = fc.id;
+      var fcID = foundFC.id;
+      // todo: filter
       // , "properties.TypeAbbr": "PVC"
       Feature.find({"fcID": fcID}).limit(50).done(function(err,arrF){
         if (err) return next(err);

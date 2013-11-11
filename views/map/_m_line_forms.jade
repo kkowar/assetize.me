@@ -27,7 +27,6 @@ mixin line_category_form(layer)
 			span.pull-right.brushes(id="stroke_#{layer.id}_0")
 				+form_weight(style.stroke.weight)
 				&nbsp;
-				&nbsp;
 				+form_opacity(style.stroke.opacity,layer.id,0)
 		
 		- each fieldValue, index in style.fieldValuesCount
