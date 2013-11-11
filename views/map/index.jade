@@ -284,8 +284,7 @@ block content
           handleStyleFieldDropdownClick(e);
         });
         $(layerSelector + " .form_color .colorPicker").colorPicker();
-        gMap.removeLayer(gLayers[layerID].layer);
-        gLayers[layerID] = undefined;
+        gLayers[layerID].redefine = true;
         drawLeafletLayers(gLayers,gMap);
         gMap.spin(false);
       });

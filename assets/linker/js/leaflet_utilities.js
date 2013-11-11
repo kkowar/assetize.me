@@ -27,20 +27,11 @@ drawZIndexOrder = function(layers,map) {
 
 getLayers = function(layers,map) {
   $.ajax({url: "/layer/find"}).done(function(data) {
-    // var sortedLayers = _.sortBy(data,function(layer){return layer.zIndex});
-    // sortedLayers = sortedLayers.reverse();
     _.each(data,function(layer,index){
+      console.log(layer);
       getFeatures(layer,layers,map,index);
     })
   });
-};
-
-getLayerFilters = function(layer) {
-
-};
-
-getLayerStyles = function(layer) {
-
 };
 
 getFeatures = function(layer,layers,map,index) {
@@ -52,10 +43,10 @@ getFeatures = function(layer,layers,map,index) {
     if (layerFeatures === undefined) return;
     var layerFeaturesCount = layerFeatures.length;
     if (layerFeaturesCount === 0) return;
-    if ((layers[layer.id] === undefined) || (layers[layer.id].count) !== layerFeaturesCount) {
+    if ((layers[layer.id] === undefined) || (layers[layer.id].redefine === true) || (layers[layer.id].count !== layerFeaturesCount)) {
       // console.log(selector + ": " + layerFeaturesCount);
       if (layers[layer.id] === undefined) layers[layer.id] = {};
-      curLayer = layers[layer.id];
+      var curLayer = layers[layer.id];
       curLayer.count = layerFeaturesCount;
       // !! colFilters.update({"_id": filter._id},{$set: {count: filteredFeaturesCount}});
       // todo: substyle counts
@@ -64,13 +55,13 @@ getFeatures = function(layer,layers,map,index) {
       if (curLayer.layer !== undefined) {
         if (map.hasLayer(curLayer.layer)) map.removeLayer(curLayer.layer);
       };
+      layers[layer.id].redefine = false;
       layers[layer.id].layer = filteredLayer;
-      layers[layer.id].zIndex = layer.zIndex;
+      if (curLayer.zIndex === undefined) {layers[layer.id].zIndex = layer.zIndex};
       if (layer.visible === "true") {
         if (filteredLayer) {
-          // console.log("map layers count: " +Object.keys(map._layers).length);
           filteredLayer.addTo(map);
-          // console.log(layer.name);
+          drawZIndexOrder(gLayers,gMap);
         };
       };
     };
@@ -369,8 +360,6 @@ updateLayerDrawOrder = function(sorted_ids,layers,map) {
   _.each(sorted_ids,function(id,index){
     $.ajax({url: "layer/update/" + id, data: {zIndex: index}}).done(function(data){
       layers[id].zIndex = index;
-      // console.log("Success");
-      // console.log(data);
     });
   });
 };
