@@ -1,0 +1,60 @@
+#layerTable .tableWrapper {
+  overflow-x: auto;
+}
+
+#layerTable table {
+  width: 100%;
+  overflow-x: scroll;
+
+  thead tr {
+    display: block;
+    width: 100%;
+
+    th {
+      width: 100%;
+      white-space: nowrap;
+      color: #666666;
+      border-bottom: 1px solid #666666;
+      border-right: 1px dotted #CCCCCC;
+
+      :hover {
+        color: #000000;
+        cursor: pointer;
+        .caret {
+          border-top: 4px solid #000000;
+        }
+      }
+
+      .caret {
+        border-left: 4px solid transparent;
+        border-right: 4px solid transparent;
+        border-top: 4px solid #666666;
+      }
+
+    }
+
+  } 
+
+  tbody {
+    width: 100%;
+    overflow-y: auto;
+    display: block;
+
+    tr:first-child {
+      td {
+        border-top: none;
+      }
+    }
+
+    tr {
+      
+      td {
+        white-space: nowrap;
+        border-right: 1px dotted #CCCCCC;
+      }
+
+    }
+
+  }
+
+} 

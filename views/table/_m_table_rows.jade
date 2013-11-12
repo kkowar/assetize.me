@@ -1,8 +1,8 @@
 mixin table_rows(rows)
   - each row in rows
     tr
-      td
+      td.td_0
         = row.fID
-      - each property in row.properties
-        td
+      - each property, index in _.map(row.properties,function(p){return p})
+        td(class="td_#{index + 1}")
           = property

@@ -7,9 +7,41 @@ block content
       table#sourceTable.table.tableScroll
         thead.tableFixedHeader
           tr
-            - each header in layerTableHeaders
-              th
-                = header
+            - each header, index in layerTableHeaders
+              th(class="th_#{index}")
+                span.dropdown
+                  span.dropdown-toggle(id="dropdown_menu_#{fcID}_#{index}" data-toggle="dropdown")
+                    = header
+                    &nbsp;
+                    span.caret
+                  ul.dropdown-menu(role="menu" aria-labelledby="dropdown_menu_#{fcID}_#{index}")
+                    li.disabled(role="presentation")
+                      a(role="menuitem" tabindex="-1" href="#" data-target="order_#{fcID}_#{index}")
+                        span
+                          | Order
+                        &nbsp;
+                        span.badge(style="font-weight: normal; font-size: .8em;position: relative; top: -1px;")
+                          | ASC
+                        &nbsp;
+                        span.badge(style="font-weight: normal; font-size: .8em;position: relative; top: -1px;")
+                          | DESC
+                    li(role="presentation")
+                      a(role="menuitem" tabindex="-1" href="#" data-target="rename_#{fcID}_#{index}")
+                        | Rename column...
+                    li.disabled(role="presentation")
+                      a(role="menuitem" tabindex="-1" href="#" data-target="change_#{fcID}_#{index}")
+                        | Change data type...
+                    li.disabled(role="presentation")
+                      a(role="menuitem" tabindex="-1" href="#" data-target="add_#{fcID}_#{index}")
+                        | Add a new column...
+                    li.disabled(role="presentation")
+                      a(role="menuitem" tabindex="-1" href="#" data-target="filter_#{fcID}_#{index}")
+                        | Filter by this column...
+                    li(role="presentation" class="divider")
+                    li(role="presentation")
+                      a(role="menuitem" tabindex="-1" href="" data-target="delete_#{fcID}_#{index}" style="color: #ff0000;")
+                        | Delete Column
+
         tbody.tableScrollContent
           +table_rows(layerTableRows)
 
@@ -21,6 +53,18 @@ block content
 
     $( document ).ready(function() {
       
+      $('.dropdown-toggle').dropdown();
+      $('a[role=menuitem]').click(function(e) {
+        e.preventDefault();
+        var arrDataTarget = $(e.currentTarget).attr("data-target").split("_");
+        var action = arrDataTarget[0];        
+        var fcID = arrDataTarget[1];
+        var fcFieldIndex = arrDataTarget[2];
+        console.log([action,fcID,fcFieldIndex]);
+        if (action === "delete") {deleteField(fcFieldIndex,fcID)};
+        //- if (action === "rename") {renameField(fcFieldIndex,fcID)};
+      })
+
       $.fn.isOnScreen = function(){
 
         var win = $(window);
@@ -78,6 +122,7 @@ block content
       var maxWidthsTD = [];
       var maxWidths = [];
       var totWidth = 0;
+
       // Iterate over TH to get all TH widths.
       _.each($sourceTH, function (th,i) {
         var width = $(th).css("width");
@@ -133,4 +178,22 @@ block content
       });
       gCurrentPage = nextPage;
     };
+
+    var deleteField = function (fieldIndex,fcID) {
+      //- var spinner = new Spinner().spin();
+      //- $("tbody").prepend(spinner.el);
+      //- $("body").append(spinner.el);
+      //- console.log("Field Deleted!");
+      //- console.log("TODO: Show Verification Modal!");
+      //- data: {action: "column", value: fieldIndex, fcID: fcID}, method: "DELETE"
+      $.ajax({url: "/table?action=column&value=" + fieldIndex + "&fcID=" + fcID, method: "DELETE"}).done(function(data){
+        console.log(data);
+        //- $(".th_" + fieldIndex).remove();
+        //- $(".td_" + fieldIndex).remove();
+        window.location.replace("/table/" + fcID);
+        spinner.stop();
+      });
+    };
+
+
 

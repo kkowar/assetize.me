@@ -17,10 +17,6 @@ html
     link(rel="stylesheet", href="/linker/styles/table.css")
     // STYLES END
     
-    script(src='/js/ejs_production.js')
-    script(src='/js/socket.io.js')
-    script(src='/js/sails.io.js')
-    script(src='/js/app.js')
     script(src='/js/jquery-1.10.2.min.js')
     script(src='/js/jquery.ui.widget.js')
     script(src='/js/jquery.iframe-transport.js')
@@ -30,28 +26,25 @@ html
     .navbar.navbar-default.navbar-fixed-top.navbar-inverse
       .container
         .navbar-header
-          button.navbar-toggle(type='button', data-toggle='collapse', data-target='.navbar-collapse')
-            span.icon-bar
-            span.icon-bar
-            span.icon-bar
-          img.navbar-brand(src='/images/logo_words.png', style='height: 50px;')
+          img.navbar-brand(src='/images/logo_words.png', style='height: 50px; position: relative; top: -2px;')
           ul#navbarMain.nav.navbar-nav
             - var active = ((req.target.controller === 'featurecollection') && (req.target.action === 'index')) ? "active" : ""
             li(class="#{active}")
               a#navTable(href="/featurecollection")
                 | Features
-            - var active = (req.target.controller === 'map') ? "active" : ""
-            li
-              a#navMap(href="/map")
-                | Map
-            - var active = (req.target.controller === 'catalog') ? "active" : ""
-            li
-              a#navCatalog(href="/catalog")
-                | Catalog
-            - var active = ((req.target.controller === 'layer') && (req.target.action === 'join')) ? "active" : ""
-            li
-              a#navJoin(href="/layer/join")
-                | Join
+            - if (req.target.controller != 'table')
+              - var active = (req.target.controller === 'map') ? "active" : ""
+              li
+                a#navMap(href="/map")
+                  | Map
+              - var active = (req.target.controller === 'catalog') ? "active" : ""
+              li
+                a#navCatalog(href="/catalog")
+                  | Catalog
+              - var active = ((req.target.controller === 'layer') && (req.target.action === 'join')) ? "active" : ""
+              li
+                a#navJoin(href="/layer/join")
+                  | Join
 
     block content
 
