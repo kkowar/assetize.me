@@ -39,9 +39,6 @@ module.exports = {
   },
 
   destroy: function(req,res) {
-    // console.log(req);
-    // console.log("TableController: delete");
-    // console.log(req.param["action"]);
     var action = req.query.action;
     var value = req.query.value;
     var fcID = req.query.fcID;
@@ -57,34 +54,20 @@ module.exports = {
       FeatureCollection.findOne({"id": fcID}).done(function(err,foundFC){
         if (err) return console.log(err);
         if (!foundFC) return console.log(foundFC);
-        console.log("Found FC");
         var property = foundFC.properties[propIndex]
-        console.log(property);
-        console.log(foundFC.properties);
         foundFC.properties.splice(propIndex,1);
-        console.log(foundFC.properties);
         foundFC.save(function(err,savedFC) {
           if (err) return console.log(err);
           if (!savedFC) return console.log(savedFC);
-          console.log("Saved FC");
-          console.log(savedFC);
           Feature.find({"fcID": fcID}).done(function(err,foundFeatures) {
             if (err) return console.log(err);
             if (foundFeatures.length === 0) return console.log(foundFeatures);
-            console.log("Found Features");
             // foundFeatures = foundFeatures.slice(0,1);
-            var counter = 0;
             _.each(foundFeatures,function(feature) {
-              // console.log(feature.properties);
               feature.properties = _.omit(feature.properties,property.name);
-              // console.log(feature.properties);
               feature.save(function(err,savedFeature) {
                 if (err) return console.log(err);
                 if (!savedFeature) return console.log(savedFeature);
-                if (counter === 0) {
-                  console.log(savedFeature);
-                  counter = 1;
-                };
               });
             });
             return res.json({message: "Column " + property.name + " deleted."});
@@ -93,6 +76,38 @@ module.exports = {
       });
     };
     // res.json({message: "No action taken."});
+  },
+
+  update: function(req,res) {
+    var action = req.body.action;
+    var fieldIndex = req.body.fieldIndex;
+    var newFieldName = req.body.newFieldName;
+    var fcID = req.body.fcID;
+    console.log([action,fieldIndex,newFieldName,fcID]);
+    // fID is added on the client and we need to
+    // account for this when accessing the properties
+    // array of the FeatureColleciton.
+    var propIndex = fieldIndex - 1;
+    FeatureCollection.findOne({"id": fcID}).done(function(err,foundFC){
+      var property = foundFC.properties[propIndex];
+      var fieldName = property.name;
+      var fieldType = property.type;
+      foundFC.properties[propIndex] = {name: newFieldName, type: fieldType};
+      foundFC.save(function(err,savedFC) {
+        Feature.find({"fcID": fcID}).done(function(err,foundFeatures) {
+          _.each(foundFeatures,function(feature) {
+            feature.properties = _.pairs(feature.properties);
+            feature.properties[propIndex][0] = newFieldName;
+            feature.properties = _.object(feature.properties);            
+            feature.save(function(err,savedFeature) {
+              if (err) return console.log(err);
+              if (!savedFeature) return console.log(savedFeature);
+            });
+          });
+          return res.json({message: "Column " + fieldName + " renamed to " + newFieldName});
+        });
+      });
+    });
   },
 
   /**

@@ -1,3 +1,26 @@
+#renameColumnModal {
+  .modal-header {
+    background-color: #f7f7f7;
+    border-top-left-radius: 6px;
+    border-top-right-radius: 6px;
+  }
+
+  .modal-body {
+    margin: 0;
+    padding: 20px;
+
+    input {
+      margin: 0;
+    }
+  }
+
+  .modal-footer {
+    margin: 0;
+    padding: 0 20px 20px 20px;
+    border-top: none;
+  }
+}
+
 #layerTable .tableWrapper {
   overflow-x: auto;
 }
@@ -6,34 +29,39 @@
   width: 100%;
   overflow-x: scroll;
 
-  thead tr {
-    display: block;
-    width: 100%;
+  thead {
 
-    th {
+    tr {
+      display: block;
       width: 100%;
-      white-space: nowrap;
-      color: #666666;
-      border-bottom: 1px solid #666666;
-      border-right: 1px dotted #CCCCCC;
+      border-left: 1px dotted #CCCCCC;
 
-      :hover {
-        color: #000000;
-        cursor: pointer;
-        .caret {
-          border-top: 4px solid #000000;
+      th {
+        width: 100%;
+        white-space: nowrap;
+        color: #666666;
+        border-bottom: 1px solid #666666;
+        border-right: 1px dotted #CCCCCC;
+
+        :hover {
+          color: #000000;
+          cursor: pointer;
+          .caret {
+            border-top: 4px solid #000000;
+          }
         }
+
+        .caret {
+          border-left: 4px solid transparent;
+          border-right: 4px solid transparent;
+          border-top: 4px solid #666666;
+        }
+
       }
 
-      .caret {
-        border-left: 4px solid transparent;
-        border-right: 4px solid transparent;
-        border-top: 4px solid #666666;
-      }
+    } 
 
-    }
-
-  } 
+  }
 
   tbody {
     width: 100%;
@@ -47,6 +75,7 @@
     }
 
     tr {
+      border-left: 1px dotted #CCCCCC;
       
       td {
         white-space: nowrap;
