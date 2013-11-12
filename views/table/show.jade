@@ -92,6 +92,17 @@ block content
         renameField(fieldIndex,fcID,newFieldName);
       });
 
+      $("#searchColumnButton").click(function(e){
+        console.log("Search Button Click");
+        var fcID = $(".tableWrapper").attr("id").split("_")[1];
+        var query = $("#searchColumnInput").val();
+        var url = "/table/search?fcID=" + fcID + "&query=" + query;
+        $.ajax({url: url}).done(function(data){
+          $("tbody").html(data.html);
+          setTableDimensions();
+        });
+      });
+
       $.fn.isOnScreen = function(){
 
         var win = $(window);

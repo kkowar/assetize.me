@@ -45,6 +45,13 @@ html
               li
                 a#navJoin(href="/layer/join")
                   | Join
+        - if (req.target.controller == 'table')
+          ul.nav.navbar-nav.pull-right
+            li(style="margin-top: 10px;")
+              span.input-group.input-group-sm(style="width: 250px;")
+                input#searchColumnInput.form-control(type="text" value="" placeholder="Search...")
+                span.input-group-btn
+                  button#searchColumnButton.btn.btn-success Search
 
     block content
 

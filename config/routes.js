@@ -35,6 +35,10 @@ module.exports.routes = {
   '/': {
     view: 'home/index'
   },
+  '/table/search': {
+    controller: 'TableController',
+    action: 'search'
+  },
   '/table/:id': {
     controller: 'TableController',
     action: 'show'

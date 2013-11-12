@@ -110,6 +110,21 @@ module.exports = {
     });
   },
 
+  search: function(req,res) {
+    var jade = require('jade');
+    var fcID = req.query.fcID;
+    var query = req.query.query;
+    var fieldName = "FLD_ZONE";
+    Feature.find({"fcID": fcID}).done(function(err,foundFeatures){
+      console.log(_.first(foundFeatures).properties);
+      var filteredFeatures = _.filter(foundFeatures,function(feature) {return feature.properties[fieldName].indexOf(query) !== -1});
+      jade.renderFile(__dirname + '/../../views/table/_table_rows.jade',{layerTableRows: filteredFeatures}, function (err, html) {
+        if (err) throw err;
+        res.json({html: html})
+      });
+    });
+  },
+
   /**
    * Overrides for the settings in `config/controllers.js`
    * (specific to TableController)
