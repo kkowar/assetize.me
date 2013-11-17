@@ -35,14 +35,26 @@ module.exports.routes = {
   '/': {
     view: 'home/index'
   },
+  '/table/stats': {
+    controller: 'TableController',
+    action: 'stats'
+  },
   '/table/search': {
     controller: 'TableController',
     action: 'search'
+  },
+  '/table/filter': {
+    controller: 'TableController',
+    action: 'filter'
   },
   '/table/:id': {
     controller: 'TableController',
     action: 'show'
   }
+
+  // TODO
+  // /table/column/add,delete,rename,filter
+  // /table/row/add,delete
 
   /*
   // But what if you want your home page to display

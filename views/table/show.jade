@@ -2,6 +2,21 @@ extends ../layout
 include _m_table_rows
 
 block content
+  #filterColumnModal.modal.fade(tabindex="-1" role="dialog" aria-labelledby="filterColumnModalLabel" aria-hidden="true")
+    .modal-dialog
+      .modal-content
+        .modal-header
+          button.close(type="button" data-dismiss="modal" aria-hidden="true") &times;
+          h4#filterColumnModalLabel.modal-title Filter Column 
+        .modal-body
+          input#filter_fcID(type="hidden" value="#{fcID}")
+          input#filter_fieldIndex(type="hidden" value="")
+          input#filter_fieldName(type="hidden" value="")
+          input#filter_fieldValue.form-control(type="text" placeholder="Filter Value")
+        .modal-footer
+          button.btn.btn-default(type="button" data-dismiss="modal") Cancel
+          button.btn.btn-primary(type="button") Add Filter
+
   #renameColumnModal.modal.fade(tabindex="-1" role="dialog" aria-labelledby="renameColumnModalLabel" aria-hidden="true")
     .modal-dialog
       .modal-content
@@ -9,12 +24,12 @@ block content
           button.close(type="button" data-dismiss="modal" aria-hidden="true") &times;
           h4#renameColumnModalLabel.modal-title Rename column 
         .modal-body
-          input#modal_fcID(type="hidden" value="#{fcID}")
-          input#modal_fieldIndex(type="hidden" value="")
-          input#modal_fieldName.form-control(type="text" placeholder="New Column Name")
+          input#rename_fcID(type="hidden" value="#{fcID}")
+          input#rename_fieldIndex(type="hidden" value="")
+          input#rename_fieldName.form-control(type="text" placeholder="New Column Name")
         .modal-footer
-          button.btn.btn-default(type="button" data-dismiss="modal") Close
-          button.btn.btn-primary(type="button") Save changes
+          button.btn.btn-default(type="button" data-dismiss="modal") Cancel
+          button.btn.btn-primary(type="button") Save Changes
 
   #layerTable.col-xs-12(style="padding-top: 50px; padding-left: 0px; padding-right: 0px;")
     .tableWrapper(id="fcID_#{fcID}")
@@ -25,9 +40,16 @@ block content
               th(class="th_#{index}")
                 span.dropdown
                   span.dropdown-toggle(id="dropdown_menu_#{fcID}_#{index}" data-toggle="dropdown")
-                    = header
-                    &nbsp;
-                    span.caret
+                    div
+                      = header
+                      &nbsp;
+                      span.caret
+                    div(style="font-weight: normal; font-size: 0.75em; color: #CCC;")
+                      if thTypes[index - 1]
+                        = thTypes[index - 1]
+                      else
+                        &nbsp;
+                      //- = type
                   ul.dropdown-menu(role="menu" aria-labelledby="dropdown_menu_#{fcID}_#{index}")
                     li.disabled(role="presentation")
                       a(role="menuitem" tabindex="-1" href="#" data-target="order_#{fcID}_#{index}")
@@ -49,7 +71,7 @@ block content
                     li.disabled(role="presentation")
                       a(role="menuitem" tabindex="-1" href="#" data-target="add_#{fcID}_#{index}")
                         | Add a new column...
-                    li.disabled(role="presentation")
+                    li(role="presentation")
                       a(role="menuitem" tabindex="-1" href="#" data-target="filter_#{fcID}_#{index}")
                         | Filter by this column...
                     li(role="presentation" class="divider")
@@ -78,18 +100,33 @@ block content
         console.log([action,fcID,fcFieldIndex]);
         if (action === "delete") {deleteField(fcFieldIndex,fcID)};
         if (action === "rename") {showRenameModal(fcFieldIndex,fcID)};
+        if (action === "filter") {showFilterModal(fcFieldIndex,fcID)};
       })
+
+      //- $('#deleteColumnModal').modal({show: false})
 
       $('#renameColumnModal').modal({show: false})
 
       $("#renameColumnModal .btn-primary").click(function(e){
-        //- console.log("Save Rename Dialog Changes");
-        var fcID = $("#renameColumnModal input#modal_fcID").val();
-        var fieldIndex = $("#renameColumnModal input#modal_fieldIndex").val();
-        var newFieldName = $("#renameColumnModal input#modal_fieldName").val();
-        //- console.log([fcID, fieldIndex, newFieldName]);
+        e.preventDefault();
+        var fcID = $("#renameColumnModal input#rename_fcID").val();
+        var fieldIndex = $("#renameColumnModal input#rename_fieldIndex").val();
+        var newFieldName = $("#renameColumnModal input#rename_fieldName").val();
         $("#renameColumnModal").modal('hide');
         renameField(fieldIndex,fcID,newFieldName);
+      });
+
+      $('#filterColumnModal').modal({show: false})
+
+      $("#filterColumnModal .btn-primary").click(function(e){
+        e.preventDefault();
+        var fcID = $("#filterColumnModal input#filter_fcID").val();
+        var fieldIndex = $("#filterColumnModal input#filter_fieldIndex").val();
+        var filterFieldName = $("#filterColumnModal input#filter_fieldName").val();
+        var filterFieldValue = $("#filterColumnModal input#filter_fieldValue").val();
+        $("#filterColumnModal").modal('hide');
+        console.log([fcID,fieldIndex,filterFieldName,filterFieldValue]);
+        filterField(fcID,fieldIndex,filterFieldName,filterFieldValue);
       });
 
       $("#searchColumnButton").click(function(e){
@@ -239,8 +276,8 @@ block content
       var jSelector = $("#dropdown_menu_" + fcID + "_" + fieldIndex);
       var fieldName = jSelector.html().split("&nbsp;")[0];
       $("#renameColumnModalLabel").html("Rename column <strong>\"" + fieldName + "\"</strong>");
-      $("#renameColumnModal input#modal_fieldIndex").val(fieldIndex);
-      $("#renameColumnModal input#modal_fieldName").val(fieldName);
+      $("#renameColumnModal input#rename_fieldIndex").val(fieldIndex);
+      $("#renameColumnModal input#rename_fieldName").val(fieldName);
       $("#renameColumnModal").modal('show');
     };
 
@@ -249,6 +286,25 @@ block content
       $.ajax({url: "/table", data: {action: "rename", fieldIndex: fieldIndex, newFieldName: newFieldName, fcID: fcID}, method: "PUT"}).done(function(data){
         console.log(data);
         window.location.replace("/table/" + fcID);
+      });
+    };
+
+    var showFilterModal = function (fieldIndex,fcID) {
+      var jSelector = $("#dropdown_menu_" + fcID + "_" + fieldIndex);
+      var fieldName = jSelector.html().split("&nbsp;")[0];
+      $("#filterColumnModalLabel").html("Filter data by column <strong>\"" + fieldName + "\"</strong>");
+      $("#filterColumnModal input#filter_fieldIndex").val(fieldIndex);
+      $("#filterColumnModal input#filter_fieldName").val(fieldName);
+      $("#filterColumnModal").modal('show');
+    };
+
+    var filterField = function (fcID,fieldIndex,filterFieldName,filterFieldValue) {
+      console.log([fcID,fieldIndex,filterFieldName,filterFieldValue]);
+      $.ajax({url: "/table/filter", data: {action: "filter", fcID: fcID, filterFieldIndex: fieldIndex, filterFieldName: filterFieldName, filterFieldValue: filterFieldValue}, method: "GET"}).done(function(data){
+        console.log(data);
+        $("tbody").html(data.html);
+        setTableDimensions();
+        //- window.location.replace("/table/" + fcID);
       });
     };
 

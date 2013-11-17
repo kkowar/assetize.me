@@ -22,6 +22,22 @@ html
     script(src='/js/jquery.iframe-transport.js')
     script(src='/js/jquery.fileupload.js')
 
+    // SCRIPTS
+    script(type="text/javascript", src="/linker/js/bootstrap.js")
+    script(type="text/javascript", src="/linker/js/d3.v3.min.js")
+    script(type="text/javascript", src="/linker/js/jquery-ui.js")
+    script(type="text/javascript", src="/linker/js/jquery.colorPicker.js")
+    script(type="text/javascript", src="/linker/js/jquery.switchButton.js")
+    script(type="text/javascript", src="/linker/js/leaflet_utilities.js")
+    script(type="text/javascript", src="/linker/js/select2.js")
+    script(type="text/javascript", src="/linker/js/select2.min.js")
+    script(type="text/javascript", src="/linker/js/simple_statistics.js")
+    script(type="text/javascript", src="/linker/js/spin.min.js")
+    script(type="text/javascript", src="/linker/js/timestamp.js")
+    script(type="text/javascript", src="/linker/js/underscore-min.js")
+    script(type="text/javascript", src="/linker/js/underscore.strings.js")
+    // SCRIPTS END
+
   body
     .navbar.navbar-default.navbar-fixed-top.navbar-inverse
       .container
@@ -32,7 +48,7 @@ html
             li(class="#{active}")
               a#navTable(href="/featurecollection")
                 | Features
-            - if (req.target.controller != 'table')
+            - if ((req.target.controller != 'table') && (req.target.action != 'show'))
               - var active = (req.target.controller === 'map') ? "active" : ""
               li
                 a#navMap(href="/map")
@@ -45,27 +61,16 @@ html
               li
                 a#navJoin(href="/layer/join")
                   | Join
-        - if (req.target.controller == 'table')
-          ul.nav.navbar-nav.pull-right
-            li(style="margin-top: 10px;")
-              span.input-group.input-group-sm(style="width: 250px;")
-                input#searchColumnInput.form-control(type="text" value="" placeholder="Search...")
-                span.input-group-btn
-                  button#searchColumnButton.btn.btn-success Search
+              - var active = ((req.target.controller === 'table') && (req.target.action === 'stats')) ? "active" : ""
+              li
+                a#navJoin(href="/table/stats")
+                  | Stats
+        //- - if (req.target.controller == 'table')
+        //-   ul.nav.navbar-nav.pull-right
+        //-     li(style="margin-top: 10px;")
+        //-       span.input-group.input-group-sm(style="width: 250px;")
+        //-         input#searchColumnInput.form-control(type="text" value="" placeholder="Search...")
+        //-         span.input-group-btn
+        //-           button#searchColumnButton.btn.btn-success Search
 
     block content
-
-  // SCRIPTS
-  script(type="text/javascript", src="/linker/js/bootstrap.js")
-  script(type="text/javascript", src="/linker/js/jquery-ui.js")
-  script(type="text/javascript", src="/linker/js/jquery.colorPicker.js")
-  script(type="text/javascript", src="/linker/js/jquery.switchButton.js")
-  script(type="text/javascript", src="/linker/js/leaflet.spin.js")
-  script(type="text/javascript", src="/linker/js/leaflet_utilities.js")
-  script(type="text/javascript", src="/linker/js/select2.js")
-  script(type="text/javascript", src="/linker/js/select2.min.js")
-  script(type="text/javascript", src="/linker/js/spin.min.js")
-  script(type="text/javascript", src="/linker/js/timestamp.js")
-  script(type="text/javascript", src="/linker/js/underscore-min.js")
-  script(type="text/javascript", src="/linker/js/underscore.strings.js")
-  // SCRIPTS END

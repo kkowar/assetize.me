@@ -28,7 +28,6 @@ drawZIndexOrder = function(layers,map) {
 getLayers = function(layers,map) {
   $.ajax({url: "/layer/find"}).done(function(data) {
     _.each(data,function(layer,index){
-      console.log(layer);
       getFeatures(layer,layers,map,index);
     })
   });
@@ -112,6 +111,17 @@ generateGeoJSONLayer = function (geoJSON,styles) {
         });
       };
 
+      if (styles.type === "choropleth") {
+        var style = styles.choropleth;
+        var styleAttributes = {
+          radius: style.radius,
+          fillOpacity: style.fill.opacity,
+          color: style.stroke.color,
+          opacity: style.stroke.opacity,
+          weight: style.stroke.weight
+        };
+      };
+
       result = L.geoJson(geoJSON, {
         style: function (feature) {
           // Figure out what to do here if anything.
@@ -122,6 +132,13 @@ generateGeoJSONLayer = function (geoJSON,styles) {
         pointToLayer: function (feature, latlng) {
           if (styles.type === "category") {
             styleAttributes.fillColor = _.isEmpty(fieldFills[feature.properties[style.field]]) ? style.fieldOthersFill : fieldFills[feature.properties[style.field]];
+          };
+          if (styles.type === "choropleth") {
+            var color = undefined;
+            _.each(style.fieldBreaks,function(fieldBreak,index){
+              if ((color === undefined) && (feature.properties[style.field] <= style.fieldBreaks[index + 1])) {color = style.fieldFillColor[index]};
+            });
+            styleAttributes.fillColor = color;
           };
           return L.circleMarker(latlng, styleAttributes);
         }
@@ -153,10 +170,27 @@ generateGeoJSONLayer = function (geoJSON,styles) {
         });
       };
 
+      if (styles.type === "choropleth") {
+        console.log(styles);
+        var style = styles.choropleth;
+        var styleAttributes = {
+          color: style.stroke.color,
+          opacity: style.stroke.opacity,
+          weight: style.stroke.weight
+        };
+      };
+
       result = L.geoJson(geoJSON, {
           style: function (feature) {
             if (styles.type === "category") {
               styleAttributes.color = _.isEmpty(fieldFills[feature.properties[style.field]]) ? style.fieldOthersFill : fieldFills[feature.properties[style.field]];
+            };
+            if (styles.type === "choropleth") {
+              var color = undefined;
+              _.each(style.fieldBreaks,function(fieldBreak,index){
+                if ((color === undefined) && (feature.properties[style.field] <= style.fieldBreaks[index + 1])) {color = style.fieldFillColor[index]};
+              });
+              styleAttributes.color = color;
             };
             return styleAttributes;
           },
@@ -251,6 +285,17 @@ updateLayerColor = function(layerID,newColor,action,subLayerID,layers) {
       };
     }; 
 
+    if (styleType === "choropleth") {
+      if ((geometryType === "Point") || (geometryType === "Polygon")) {
+        if (action === "fill") {data.styles.choropleth.fieldFillColor[subLayerID] = newColor;};
+        if (action === "stroke") {data.styles.choropleth.stroke.color = newColor;};
+      };
+      if ((geometryType === "LineString") || (geometryType === "MultiLineString")) {
+        data.styles.choropleth.fieldFillColor[subLayerID] = newColor;
+      };
+      data.styles.choropleth.fieldValues = [];
+    }; 
+
     if (styleType === "simple") {
       if (action === "fill") {data.styles.simple.fill.color = newColor;};
       if (action === "stroke") {data.styles.simple.stroke.color = newColor;};
@@ -287,6 +332,43 @@ updateLayerColor = function(layerID,newColor,action,subLayerID,layers) {
             _.each(layers[data.id].layer._layers,function(layer){
               var color = fieldFills[layer.feature.properties[data.styles.category.field]];
               color = (color === undefined) ? data.styles.category.fieldOthersFill : color
+              layer.setStyle({color: color});
+            });
+          };
+        };
+
+      };
+
+      if (styleType === "choropleth") {
+
+        fieldFills = {};
+        _.each(data.styles.choropleth.fieldValues,function(fieldValue,index){
+          fieldFills[fieldValue] = data.styles.choropleth.fieldFillColor[index];
+        });
+
+        if (action === "fill") {
+          _.each(layers[data.id].layer._layers,function(layer){
+            var fillColor = fieldFills[layer.feature.properties[data.styles.choropleth.field]];
+            fillColor = (fillColor === undefined) ? data.styles.choropleth.fieldOthersFill : fillColor
+            // console.log(fillColor);
+            // layer.setStyle({fillColor: fillColor});
+            layer.setStyle({fillColor: fillColor});
+          });
+        };
+
+        if (action === "stroke") {
+          if ((geometryType === "Point") || (geometryType === "Polygon")) {
+            var color = data.styles.choropleth.stroke.color;
+            console.log(color);
+            _.each(layers[data.id].layer._layers,function(layer){
+              layer.setStyle({color: color});
+            });
+          };
+
+          if ((geometryType === "LineString") || (geometryType === "MultiLineString")) {
+            _.each(layers[data.id].layer._layers,function(layer){
+              var color = fieldFills[layer.feature.properties[data.styles.choropleth.field]];
+              color = (color === undefined) ? data.styles.choropleth.fieldOthersFill : color
               layer.setStyle({color: color});
             });
           };
@@ -331,9 +413,22 @@ updateLayerStyle = function(layerID,value,action,attribute) {
         data.styles.category.radius = value;
       };
     };
+    if (data.styles.type === "choropleth") {
+      if (attribute === 'opacity') {
+        if (action === "fill") {data.styles.choropleth.fill.opacity = value};
+        if (action === "stroke") {data.styles.choropleth.stroke.opacity = value};
+      };
+      if (attribute === 'weight') {
+        data.styles.choropleth.stroke.weight = value;
+      };
+      if (attribute === 'radius') {
+        data.styles.choropleth.radius = value;
+      };
+      data.styles.choropleth.fieldValues = [];
+    };
     $.ajax({url: "layer/update/" + layerID, data: data}).done(function(data){
       // console.log("Success");
-      // console.log(data);
+      console.log(data);
     });
   });
 };
@@ -363,4 +458,74 @@ updateLayerDrawOrder = function(sorted_ids,layers,map) {
     });
   });
 };
+
+drawFrequencyChart = function(values,valBreaks,element) {
+
+  // A formatter for counts.
+  var formatCount = d3.format(",.0f");
+
+  var margin = {top: 10, right: 30, bottom: 30, left: 30},
+      width = 300 - margin.left - margin.right,
+      height = 100 - margin.top - margin.bottom;
+
+  var x = d3.scale.linear()
+      .domain([0, _.max(arr_total)])
+      .range([0, width]);
+
+  // Generate a histogram using twenty uniformly-spaced bins.
+  var data = d3.layout.histogram()
+      .bins(x.ticks(200))
+      (values);
+
+  var y = d3.scale.linear()
+      .domain([0, d3.max(data, function(d) { return d.y; })])
+      .range([height, 0]);
+
+  var xAxis = d3.svg.axis()
+      .scale(x)
+      .orient("bottom");
+
+  var svg = d3.select(element).append("svg")
+      .attr("width", width + margin.left + margin.right)
+      .attr("height", height + margin.top + margin.bottom)
+    .append("g")
+      .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
+
+  var bar = svg.selectAll(".bar")
+      .data(data)
+    .enter().append("g")
+      .attr("class", "bar")
+      .attr("transform", function(d) { return "translate(" + x(d.x) + "," + y(d.y) + ")"; });
+
+  bar.append("rect")
+      .attr("x", 1)
+      .attr("width", x(data[0].dx) - 1)
+      .attr("height", function(d) { return height - y(d.y); });
+
+  svg.append("g")
+      .attr("class", "x axis")
+      .attr("transform", "translate(0," + height + ")")
+      .call(xAxis);
+
+  _.each(valBreaks,function(valBreak,i){
+    var line = svg.append("line")
+      .attr("x1", x(valBreak))
+      .attr("y1", y(0))
+      .attr("x2", x(valBreak))
+      .attr("y2", y(d3.max(data, function(d) { return d.y; })))
+      .style("stroke", "rgb(0,0,0)")
+      .style("stroke-width", "1")
+      .style("stroke-dasharray","5,5");
+    svg.append("text")
+      .attr("transform","translate(" + x(valBreak + 3) + "," + y(d3.max(data, function(d) { return d.y; })) + ")rotate(90)")
+      .attr("text-anchor", "left")
+      .attr("font-size", "9px")
+      .text(function(d) { return formatCount(valBreak); });
+  });
+
+};
+
+
+
+
 

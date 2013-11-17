@@ -19,6 +19,41 @@ createFeatureCollection = function (name,fc) {
   } catch(err) {
     var geometryType = undefined;
   };
+  var fieldValues = [];
+  _.each(fcProperties,function(fcProperty,i){
+    // console.log(i);
+    // console.log(fcProperty.name);
+    var property = fcProperty.name;
+    var mapped = _.map(fc.features,function(feature){return feature.properties[property]});
+    var compacted = _.compact(mapped);
+    var uniqued = _.uniq(compacted);
+    fieldValues[i] = uniqued;
+  });
+  // console.log(fieldValues);
+  _.each(fieldValues,function(values,i){
+    var propType = undefined;
+    var filtered = undefined;
+    propType = _.isEmpty(values) ? "String" : undefined;
+    if (propType === undefined) {
+      propType = _.isEmpty(_.filter(values,function(value) {return _.isNumber(value);})) ? undefined : "Number"
+      if (propType === undefined) {
+        propType = _.isEmpty(_.filter(values,function(value) {return value.match(/^-?[0-9]+$/);})) ? undefined : "Number"
+      };
+    };
+    if (propType === undefined) {
+      filtered = _.filter(values,function(value) {return !isNaN(Date.parse(value));})
+      propType = _.isEmpty(filtered) ? undefined : "Date"
+    };
+    if (propType === undefined) {
+      propType = _.isEmpty(_.filter(values,function(value) {return _.isBoolean(value);})) ? undefined : "Boolean"
+    };
+    if (propType === undefined) {
+      propType = _.isEmpty(_.filter(values,function(value) {return _.isString(value);})) ? undefined : "String"
+    };
+    // console.log(fcProperties[i].name + ": " + propType);
+    fcProperties[i].type = propType;
+  });
+  // console.log(fieldValues);
   var newFC = {name: name, 
                properties: fcProperties, 
                geometryType: geometryType, 

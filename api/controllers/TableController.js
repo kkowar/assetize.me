@@ -32,8 +32,11 @@ module.exports = {
         if (err) return next(err);
         if (!arrF) return next();
         var th = _.map(arrF[0].properties,function(value,key){return key;});
+        var thTypes = _.map(foundFC.properties,function(prop){return prop.type;});
+        console.log(foundFC);
+        console.log(thTypes);
         th.unshift("fID");
-        res.view({layerTableHeaders: th, layerTableRows: arrF, fcID: fcID, currentView: req.url});
+        res.view({layerTableHeaders: th, thTypes: thTypes, layerTableRows: arrF, fcID: fcID, currentView: req.url});
       });
     });
   },
@@ -110,18 +113,53 @@ module.exports = {
     });
   },
 
-  search: function(req,res) {
+  // BROKEN!!
+  // search: function(req,res) {
+  //   console.log(req.params);
+  //   console.log(req.body);
+  //   console.log(req.query);
+  //   var jade = require('jade');
+  //   var fcID = req.query.fcID;
+  //   var query = req.query.query;
+  //   var fieldName = req.query.filterFieldName;
+  //   var selector = JSON.parse('{"properties.' + fieldName + '": "'+ query + '"}');
+  //   console.log(selector);
+  //   Feature.find().where({"fcID": fcID}).where(selector).done(function(err,foundFeatures){
+  //     console.log(_.first(foundFeatures).properties);
+  //     var filteredFeatures = _.filter(foundFeatures,function(feature) {return feature.properties[fieldName].indexOf(query) !== -1});
+  //     jade.renderFile(__dirname + '/../../views/table/_table_rows.jade',{layerTableRows: filteredFeatures}, function (err, html) {
+  //       if (err) throw err;
+  //       res.json({html: html})
+  //     });
+  //   });
+  // },
+
+  filter: function(req,res) {
+    console.log(req.params);
+    console.log(req.body);
+    console.log(req.query);
     var jade = require('jade');
     var fcID = req.query.fcID;
-    var query = req.query.query;
-    var fieldName = "FLD_ZONE";
-    Feature.find({"fcID": fcID}).done(function(err,foundFeatures){
-      console.log(_.first(foundFeatures).properties);
-      var filteredFeatures = _.filter(foundFeatures,function(feature) {return feature.properties[fieldName].indexOf(query) !== -1});
-      jade.renderFile(__dirname + '/../../views/table/_table_rows.jade',{layerTableRows: filteredFeatures}, function (err, html) {
+    var fieldIndex = req.query.filterFieldIndex;
+    var fieldName = req.query.filterFieldName;
+    var fieldValue = req.query.filterFieldValue;
+    var selector = JSON.parse('{"properties.' + fieldName + '": "'+ fieldValue + '"}');
+    console.log(selector);
+    Feature.find().where({"fcID": fcID}).where(selector).done(function(err,foundFeatures){
+      if (err) return next(err);
+      // if (err) return res.json({message: "err", err: err, });
+      if (foundFeatures.length === 0) return res.json({message: "success", html: "<tr><td class='success'>No Results Found</td></tr>"});
+      // console.log(_.first(foundFeatures).properties);
+      jade.renderFile(__dirname + '/../../views/table/_table_rows.jade',{layerTableRows: foundFeatures}, function (err, html) {
         if (err) throw err;
         res.json({html: html})
       });
+    });
+  },
+
+  stats: function(req,res) {
+    Feature.find().where({"fcID": "528452c49940909288001993"}).where({"properties.User_Type": "COMI"}).done(function(err,features){
+      res.view({features: JSON.stringify(features)});
     });
   },
 

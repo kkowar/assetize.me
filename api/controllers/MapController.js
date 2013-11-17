@@ -91,8 +91,6 @@ module.exports = {
             if (err) return console.log(err);
             if (!createdLayer) return;
             // todo: better error handling.
-            // todo: figure out the EJS on the server side.
-            // var html = new EJS({url: 'cleaning.ejs'}).render(data);
             res.view('map/_layer', {layer: savedLayer, layout: null});
           });
         });

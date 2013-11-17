@@ -51,3 +51,35 @@ mixin line_category_form(layer)
 				span.pull-right.brushes(id="stroke_#{layer.id}_others")
 					+form_color(style.fieldOthersFill)
 
+mixin line_choropleth_form(layer)
+	- var style = layer.styles.choropleth
+	.layer-form
+		.row
+			span.description
+				| Column
+			span.pull-right.brushes(id="layer_#{layer.id}_0")
+				+style_field_dropdown(style.fieldHeaders,style.field,layer)
+		.row
+			span.description
+				| Buckets
+			span.pull-right.brushes(id="buckets_#{layer.id}_0")
+				+bucket_dropdown(["3 Buckets","5 Buckets","7 Buckets"],"5 Buckets",layer)
+		.row
+			span.description
+				| Classification
+			span.pull-right.brushes(id="classification_#{layer.id}_0")
+				+classification_dropdown(["Equal Interval","Quantile","Standard Deviation","Maximum Breaks","Jenks","Heads/Tails"],"Quantile",layer)
+		.row
+			span.description
+				| Color Ramp
+			span.pull-right.brushes(id="stroke_#{layer.id}_#{index}")
+				+form_color(style.fieldFillColor[index])
+		.row
+			span.description
+				| Line Stroke
+			span.pull-right.brushes(id="stroke_#{layer.id}_0")
+				+form_weight(style.stroke.weight)
+				&nbsp;
+				+form_opacity(style.stroke.opacity,layer.id,0)
+
+

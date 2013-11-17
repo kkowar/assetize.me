@@ -3,6 +3,8 @@ include _m_layer
 block content
   link(rel="stylesheet" href="http://cdn.leafletjs.com/leaflet-0.6.4/leaflet.css")
   script(src="http://cdn.leafletjs.com/leaflet-0.6.4/leaflet.js")
+  script(src="http://cdn.leafletjs.com/leaflet-0.6.4/leaflet.js")
+  script(src='/js/leaflet.spin.js')
 
   #mapContainer
     .row
@@ -97,16 +99,14 @@ block content
           gLayers[layerID].layer.addTo(gMap);
           updateLayerVisibility(layerID,true);
         };
-        console.log("drawZIndexOrder");
+        //- console.log("drawZIndexOrder");
         drawZIndexOrder(gLayers,gMap);
       });
       
       $(document).on("click touchend",".remove-layer",function (e) {
         e.preventDefault();
         var layerID = (e.currentTarget.id).split("_")[1];
-        console.log(layerID);
         $.ajax({url: "layer/destroy/" + layerID}).done(function(data){
-          console.log(data);
           $("#layer_" + layerID).remove();
           gMap.removeLayer(gLayers[layerID].layer);
           // todo: put the layer name back in the option box
@@ -143,6 +143,10 @@ block content
       $(".layer-style-field-dropdown").on("click", function (e) {
         handleStyleFieldDropdownClick(e);
       });
+      setupSelect2DropDown(".layer-classificiation-dropdown");
+      $(".layer-classification-dropdown").on("click", function (e) {
+        handleClassificationDropdownClick(e);
+      });
     };
 
     var setupColorPicker = function () {
@@ -175,7 +179,6 @@ block content
         e.preventDefault();
         var target = $(e.currentTarget);
         if (target.parent().hasClass('form_color')) return;
-        // console.log("not form_color");
         var attribute = undefined;
         if (target.parent().hasClass('form_radius')) attribute = 'radius';
         if (target.parent().hasClass('form_opacity')) attribute = 'opacity';
@@ -250,9 +253,7 @@ block content
       var layerSelector = "#layer_" + layerID;
       $(layerSelector + " .layer-forms").html("");
       var url = "/style/generate?type=" + styleType + "&layerID=" + layerID + "&fcID=" + fcID;
-      console.log("Calling AJAX");
       $.ajax({url: url}).done(function(html) {
-        // console.log(html);
         $(layerSelector + " .layer-forms").html(html);
         setupSelect2DropDown(layerSelector + " .layer-style-field-dropdown");
         $(layerSelector + " .layer-style-field-dropdown").on("click", function (e) {
@@ -271,12 +272,33 @@ block content
       var field = $(e.currentTarget).val();
       var layerID = $(e.currentTarget).attr("id").split("_")[1];
       var fcID = $(e.currentTarget).attr("id").split("_")[2];
-      var styleType = "Category";
+      var styleType = $(".layer-style-type-dropdown .select2-chosen").html();
       var layerSelector = "#layer_" + layerID;
-      var spinner = new Spinner().spin();
-      // $(layerSelector + " .layer-forms").html(spinner.el);
       $(layerSelector + " .layer-forms").html("");
       var url = "/style/generate?type=" + styleType + "&layerID=" + layerID + "&fcID=" + fcID + "&field=" + field;
+      $.ajax({url: url}).done(function(html) {
+        $(layerSelector + " .layer-forms").html(html);
+        setupSelect2DropDown(layerSelector + " .layer-style-field-dropdown");
+        $(layerSelector + " .layer-style-field-dropdown").on("click", function (e) {
+          handleStyleFieldDropdownClick(e);
+        });
+        $(layerSelector + " .form_color .colorPicker").colorPicker();
+        gLayers[layerID].redefine = true;
+        drawLeafletLayers(gLayers,gMap);
+        gMap.spin(false);
+      });
+    };
+
+    // TODO
+    var handleClassificationDropdownClick= function (e) {
+      gMap.spin(true);
+      var classification = $(e.currentTarget).val();
+      var layerID = $(e.currentTarget).attr("id").split("_")[1];
+      var fcID = $(e.currentTarget).attr("id").split("_")[2];
+      var styleType = $(".layer-style-type-dropdown .select2-chosen").html();
+      var layerSelector = "#layer_" + layerID;
+      $(layerSelector + " .layer-forms").html("");
+      var url = "/style/generate?type=" + styleType + "&layerID=" + layerID + "&fcID=" + fcID + "&field=" + field + "&classification=" + classification;
       $.ajax({url: url}).done(function(html) {
         $(layerSelector + " .layer-forms").html(html);
         setupSelect2DropDown(layerSelector + " .layer-style-field-dropdown");

@@ -89,7 +89,55 @@ module.exports = {
             });
           });
         };
-
+        if (type === "Choropleth") {
+          Feature.find({"fcID": fcID}).done(function(err,foundFeatures){
+            if (err) return res.json({error: err});
+            if (!foundFeatures) return res.json({foundFeatures: foundFeatures});
+            foundLayer.styles.type = "choropleth";
+            var categoryExists = (foundLayer.styles.choropleth === undefined) ? false : true;
+            var fieldHeaders = _.map(_.filter(foundFC.properties,function(property){return property.type === "Number"}),function(property){return property.name});
+            console.log(field);
+            if (!categoryExists && !field) {field = fieldHeaders[0]};         
+            if (categoryExists && !field) {field = foundLayer.styles.choropleth.field};       
+            var fieldValues = _.map(foundFeatures,function(feature){return feature.properties[field]});
+            var fieldValuesCountBy = _.countBy(fieldValues, function(fV){return fV;});
+            var sortable = [];
+            for (var fV in fieldValuesCountBy) {
+              sortable.push([fV, fieldValuesCountBy[fV]])
+              sortable.sort(function(a, b) {return a[1] - b[1]})
+            }
+            var fieldValuesSortedCount = sortable.reverse();
+            var uniqFieldValues = _.map(fieldValuesSortedCount,function(fV){return fV[0]});
+            var stroke = !categoryExists ? undefined : foundLayer.styles.choropleth.stroke;
+            var fill = !categoryExists ? undefined : foundLayer.styles.choropleth.fill;
+            var radius = !categoryExists ? undefined : foundLayer.styles.choropleth.radius;
+            if (!categoryExists || (foundLayer.styles.choropleth.field !== field)) {
+              var newStyle = {
+                type: "choropleth",
+                geometryType: foundFC.geometryType,
+                field: field,
+                fieldHeaders: fieldHeaders,
+                classification: "Quantiles",
+                bucketCount: 5,
+                fieldValues: fieldValues,
+                fieldValuesCount: fieldValuesSortedCount,
+                stroke: stroke,
+                fill: fill,
+                radius: radius
+              };
+              foundLayer.styles.choropleth = generateLayerStyle(newStyle);
+            };
+            foundLayer.save(function(err,savedLayer){
+              if (err) return console.log(err);
+              if (!savedLayer) return;
+              console.log("Render Geometery Category: " + geometryType);
+              // console.log(savedLayer);
+              if (geometryType === "Point") {res.view('map/_point_choropleth_form', {layer: savedLayer, layout: null})};
+              if (geometryType === "Polygon") {res.view('map/_polygon_choropleth_form', {layer: savedLayer, layout: null})};
+              if (geometryType === "LineString" || geometryType === "MultiLineString") {res.view('map/_line_choropleth_form', {layer: savedLayer, layout: null})};
+            });
+          });
+        };
         // res.json({message: "You shouldn't see this."});
       });
     })
@@ -104,6 +152,8 @@ module.exports = {
   
 };
 
+// Old Meteor Filtering Code
+
 // var fcID = $('#assetFeatureCollectionID').val();
 // var field = $('#assetFilterFieldSelect').val();
 // var e2 = $("#assetFilterValueSelect");
@@ -111,7 +161,4 @@ module.exports = {
 // properties = properties.sort();
 // var html = _.reduce(properties,function (fragment,property) {return fragment + ("<option>" + property + "</option>")},"");
 // e2.html(html);
-
-
-
 

@@ -20,6 +20,9 @@ mixin layer(layer)
           - var category = layer.styles.type === "category" ? true : false
           option(value="Category_#{layer.id}_#{layer.fcID}" selected=category)
             | Category
+          - var category = layer.styles.type === "choropleth" ? true : false
+          option(value="Choropleth_#{layer.id}_#{layer.fcID}" selected=category)
+            | Choropleth
       .layer-forms
         - var type = layer.styles.type
         - if (layer.geometryType === "Point")
@@ -27,6 +30,8 @@ mixin layer(layer)
             +point_simple_form(layer)
           - if (type === "category")
             +point_category_form(layer)
+          - if (type === "choropleth")
+            +point_choropleth_form(layer)
         - if (layer.geometryType === "Polygon")
           - if (type === "simple")
             +polygon_simple_form(layer)
@@ -37,6 +42,8 @@ mixin layer(layer)
             +line_simple_form(layer)
           - if (type === "category")
             +line_category_form(layer)
+          - if (type === "choropleth")
+            +line_choropleth_form(layer)
       div(style="padding-top: 5px; padding-bottom: 10px;")
         small.text-muted
           span.badge(style="font-size: 10px; width: 40px; background-color: white; position: relative; top: -1px; left: -5px; border: 1px solid #666666; color: #666666;")
@@ -46,3 +53,8 @@ mixin layer(layer)
             &nbsp;
             | Showing All Features
         span.remove-layer.glyphicon.glyphicon-remove.pull-right(id="remove-layer glyphicon glyphicon-remove pull-rightlayer_#{layer.id}_remove" style="color: red;")
+
+
+
+
+

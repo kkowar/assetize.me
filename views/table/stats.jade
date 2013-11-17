@@ -1,0 +1,318 @@
+extends ../layout
+include _m_table_rows
+
+block content
+  style
+
+    svg {
+      font: 8px sans-serif;
+    }
+
+    .bar rect {
+      fill: #CCC;
+      stroke: #CCC;
+      shape-rendering: crispEdges;
+    }
+
+    .bar text {
+      fill: #000;
+    }
+
+    .axis path, .axis line {
+      fill: none;
+      stroke: #000;
+      shape-rendering: crispEdges;
+    }
+
+
+  #layerTable.col-xs-12.container(style="padding-top: 100px;")
+    #calcEqualIntervals
+      h3 calcEqualIntervals
+    #calcQuantiles
+      h3 calcQuantiles
+    #calcStandardDeviation
+      h3 calcStandardDeviation
+    #calcMaximumBreaks
+      h3 calcMaximumBreaks
+    #calcJenks
+      h3 calcJenks
+    #calcHeadsTails
+      h3 calcHeadsTails
+    #manual
+      h3 Manual
+
+  script.
+
+    var values = [1002,1003,1004,1004,1005,1005,1006,1006,1006,1006,1006,1009,1010,1013,1014,1015,1015,1017
+                 ,1019,1020,1021,1021,1022,1023,1023,1024,1026,1026,1027,1028,1028,1028,1030,1030,1031,1031
+                 ,1033,1033,1033,1033,1036,1036,1036,1037,1039,1039,1041,1041,1042,1043,1043,1043,1044,1045
+                 ,1047,1049,1050,1050,1051,1051,1052,1052,1052,1054,1056,1058,1058,1059,1059,1060,1062,1062
+                 ,1065,1066,1066,1067,1070,1071,1072,1072,1073,1075,1076,1080,1080,1080,1080,1081,1083,1084
+                 ,1086,1086,1088,1089,1090,1091,1094,1095,1096,1096];
+
+    var features = JSON.parse(_.unescape("#{features}"));
+    var arr_total = _.compact(_.map(features,function(feature){return parseFloat(feature.properties["Total"])}));
+    //- console.log(arr_total.sort());
+    console.log(_.min(arr_total));;
+    console.log(_.max(arr_total));
+    console.log(_.max(arr_total) - _.min(arr_total));
+
+
+    var calcEqualIntervals = function(values,breaks) {
+      var min = _.min(values);
+      var max = _.max(values);
+      var range = max - min;
+      var n = breaks ? breaks : 5;
+      if (range === 0) {n = 1};
+      var breaks = [min];
+      for (var i = 0; i < n - 1; i++) {
+        breaks.push(breaks[i] + range/n);
+      }
+      breaks.push(max);
+      //- breaks = _.map(breaks,function(brake){return Math.floor(brake)});
+      return breaks;
+    };
+
+    console.log("Calculated Equal Intervals");
+    console.log(calcEqualIntervals(values));
+    console.log([1002,1020,1039,1058,1077,1096]);
+
+    var calcQuantiles = function(values,breaks) {
+      values = values.sort(function(a,b){return a - b});
+      var min = _.min(values);
+      var max = _.max(values);
+      var n = breaks ? breaks : 5;
+      n = _.min([n,_.uniq(values).length]);
+      var breaks = _.map(values,function(value,i){return values[Math.ceil(i * (values.length)/n)]});
+      breaks = _.compact(breaks);
+      breaks.push(max);
+      return breaks;
+    };
+
+    console.log("Calculated Quantiles");
+    console.log(calcQuantiles(values));
+    console.log([1002,1021,1036,1052,1073,1096]);
+
+    //- console.log(ss);
+
+    var calcStandardDeviation = function(values,numBreaks) {
+      var mean = ss.mean(values);
+      console.log(mean);
+      var stdev = ss.standard_deviation(values);
+      console.log(stdev);
+      var n = numBreaks ? numBreaks : 5;
+      console.log(n);
+      var breaks = [_.min(values)];
+      if (n % 2 != 0) {n = n - 1};
+      for (var i = 0; i < n; i++){ 
+        //- breaks.push(Math.round(mean - stdev * ((n / 2 - i) - 0.5)));
+        breaks.push(mean - stdev * ((n / 2 - i) - 0.5));
+      };
+      breaks.push(_.max(values));
+      breaks = _.filter(breaks,function(valBreak){return valBreak > 0})
+      return breaks;
+    };
+
+    console.log("Calculated Standard Deviation");
+    console.log(calcStandardDeviation(values));
+    console.log([1002,1005,1032,1059,1086,1096]);
+
+    valuesMB = [0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,200
+             ,201,202,203,204,205,206,207,208,209,210,211,212,213,214
+             ,215,216,217,218,219,400,401,402,403,404,405,406,407,408
+             ,409,410,411,412,413,414,415,416,417,418,419,600,601,602
+             ,603,604,605,606,607,608,609,610,611,612,613,614,615,616
+             ,617,618,619,800,801,802,803,804,805,806,807,808,809,810
+             ,811,812,813,814,815,816,817,818,819]
+
+    var calcMaximumBreaks = function(values,breaks) {
+      //- values = values.sort(function(a,b){return a - b});
+      var n = breaks ? breaks : 5;
+      var valLength = _.uniq(values).length;
+      n = _.min([n,valLength]);
+      var diffArray = [];
+      for (var i = 0; i < valLength - 1; i++) {
+        var diff = values[i+1] - values[i];
+        var midpoint = diff/2 + values[i];
+        diffArray.push({index: i, midpoint: midpoint, diff: diff}); 
+      };
+      diffArray = _.sortBy(diffArray,"diff").reverse();
+      var breaks = [];
+      for (var i = 0; i < n - 1; i++) {
+        //- breaks.push(Math.floor(diffArray[i]["midpoint"]));
+        breaks.push(diffArray[i]["midpoint"]);
+      };
+      breaks = breaks.sort();
+      var min = _.min(values);
+      var max = _.max(values);
+      breaks.unshift(min);
+      breaks.push(max);
+      return breaks;
+    };
+
+    console.log("Calculated Maximum Breaks");
+    console.log(calcMaximumBreaks(valuesMB));
+    console.log([0,109,309,509,709,819]);
+
+    // Jenks
+
+    console.log("Calculated Jenks Breaks");
+    console.log(ss.jenks(values,5));
+
+    // Heads / Tails
+
+    var calcHeadsTails = function(values,breaks){
+      var valLength = values.length;
+      //- console.log("valLength: " + valLength);
+      var min = _.min(values);
+      var max = _.max(values);
+      var i = 2;
+      var n = breaks ? breaks : 5;
+      //- values = values.sort();
+      if (valLength === 0) {return undefined};
+      if (valLength < n) {return [min,max]};
+      //- var mean = ss.mean(values);
+      //- console.log("mean: " + mean);
+      //- var breaks = [mean];
+      //- var filteredValues = _.filter(values,function(value){return value > mean;});
+      //- console.log(filteredValues);
+      //- console.log("filteredLength: " + filteredValues.length);
+      var breaks = [min];
+      for (var i = 0; i < n - 1; i++) {
+        var mean = ss.mean(values);
+        breaks.push(mean);
+        values = _.filter(values,function(value){return value > mean;});
+      };
+      breaks.push(max);
+      breaks = _.uniq(breaks);
+      return breaks;
+    };
+
+    console.log("Calculated Heads / Tails Breaks");
+    console.log(calcHeadsTails(values));
+
+    var calcAllBreaks = function (values,breaks) {
+      console.log("---------- calcAllBreaks ----------");
+      console.log("Calculated Equal Intervals");
+      console.log(calcEqualIntervals(values,breaks));
+      console.log("Calculated Quantiles");
+      console.log(calcQuantiles(values,breaks));
+      console.log("Calculated Standard Deviation");
+      console.log(calcStandardDeviation(values,breaks));
+      console.log("Calculated Maximum Breaks");
+      console.log(calcMaximumBreaks(values,breaks));
+      console.log("Calculated Jenks Breaks");
+      console.log(ss.jenks(values,breaks));
+      console.log("Calculated Heads / Tails Breaks");
+      console.log(calcHeadsTails(values,breaks));
+    };
+
+    //- calcAllBreaks(arr_total,5);
+
+    // Generate an Irwin–Hall distribution of 10 random variables.
+    //- var values = d3.range(1000).map(d3.random.irwinHall(10));
+
+    var drawFrequencyChart = function(values,valBreaks,element) {
+
+      // A formatter for counts.
+      var formatCount = d3.format(",.0f");
+
+      var margin = {top: 10, right: 30, bottom: 30, left: 30},
+          width = 300 - margin.left - margin.right,
+          height = 100 - margin.top - margin.bottom;
+
+      var x = d3.scale.linear()
+          .domain([0, _.max(arr_total)])
+          .range([0, width]);
+
+      // Generate a histogram using twenty uniformly-spaced bins.
+      var data = d3.layout.histogram()
+          .bins(x.ticks(200))
+          (values);
+
+      var y = d3.scale.linear()
+          .domain([0, d3.max(data, function(d) { return d.y; })])
+          .range([height, 0]);
+
+      var xAxis = d3.svg.axis()
+          .scale(x)
+          .orient("bottom");
+
+      var svg = d3.select(element).append("svg")
+          .attr("width", width + margin.left + margin.right)
+          .attr("height", height + margin.top + margin.bottom)
+        .append("g")
+          .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
+
+      var bar = svg.selectAll(".bar")
+          .data(data)
+        .enter().append("g")
+          .attr("class", "bar")
+          .attr("transform", function(d) { return "translate(" + x(d.x) + "," + y(d.y) + ")"; });
+
+      bar.append("rect")
+          .attr("x", 1)
+          .attr("width", x(data[0].dx) - 1)
+          .attr("height", function(d) { return height - y(d.y); });
+
+      svg.append("g")
+          .attr("class", "x axis")
+          .attr("transform", "translate(0," + height + ")")
+          .call(xAxis);
+
+      _.each(valBreaks,function(valBreak,i){
+        var line = svg.append("line")
+          .attr("x1", x(valBreak))
+          .attr("y1", y(0))
+          .attr("x2", x(valBreak))
+          .attr("y2", y(d3.max(data, function(d) { return d.y; })))
+          .style("stroke", "rgb(0,0,0)")
+          .style("stroke-width", "1")
+          .style("stroke-dasharray","5,5");
+        svg.append("text")
+          .attr("transform","translate(" + x(valBreak + 3) + "," + y(d3.max(data, function(d) { return d.y; })) + ")rotate(90)")
+          .attr("text-anchor", "left")
+          .attr("font-size", "9px")
+          .text(function(d) { return formatCount(valBreak); });
+      });
+
+    };
+
+    var drawLegend = function(breakPoints,element) {
+      var html = "<span><ul>";
+      _.each(breakPoints,function(valBreak){
+        html = html + "<li>" + valBreak + "</li>";
+      });
+      html = html + "</ul></span";
+      $(element).append(html)
+    };
+
+    var breakpoints = calcEqualIntervals(arr_total);
+    drawFrequencyChart(arr_total,breakpoints,"#calcEqualIntervals");
+    drawLegend(breakpoints,"#calcEqualIntervals");
+
+    var breakpoints = calcQuantiles(arr_total);
+    drawFrequencyChart(arr_total,breakpoints,"#calcQuantiles");
+    drawLegend(breakpoints,"#calcQuantiles");
+
+    var breakpoints = calcStandardDeviation(arr_total);
+    drawFrequencyChart(arr_total,breakpoints,"#calcStandardDeviation");
+    drawLegend(breakpoints,"#calcStandardDeviation");
+
+    var breakpoints = calcMaximumBreaks(arr_total);
+    drawFrequencyChart(arr_total,breakpoints,"#calcMaximumBreaks");
+    drawLegend(breakpoints,"#calcMaximumBreaks");
+
+    var breakpoints = ss.jenks(arr_total,5);
+    drawFrequencyChart(arr_total,breakpoints,"#calcJenks");
+    drawLegend(breakpoints,"#calcJenks");
+
+    var breakpoints = calcHeadsTails(arr_total);
+    drawFrequencyChart(arr_total,breakpoints,"#calcHeadsTails");
+    drawLegend(breakpoints,"#calcHeadsTails");
+
+    var breakpoints = [0,100,200,300,400,500];
+    drawFrequencyChart(arr_total,breakpoints,"#manual");
+    drawLegend(breakpoints,"#manual");
+
+
