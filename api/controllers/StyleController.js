@@ -18,10 +18,14 @@
 module.exports = {
     
   generate: function(req,res) {
-  	var type = req.param("type");
-  	var layerID = req.param("layerID");
-  	var fcID = req.param("fcID");
-    var field = req.param("field") ? req.param("field") : undefined;
+    // console.log(req.query)
+  	var type = req.query.type;
+    var field = req.query.field ? req.query.field : undefined;
+    var buckets = req.query.buckets ? req.query.buckets : undefined;
+    var classification = req.query.classification ? req.query.classification : undefined;
+    var fcID = req.query.fcID;
+  	var layerID = req.query.layerID;
+    console.log([type,field,buckets,classification,fcID,layerID]);
     FeatureCollection.findOne({"id": fcID}).done(function(err,foundFC) {
       if (err) return res.json({error: err});
       if (!foundFC) return res.json({foundFC: foundFC});
@@ -108,17 +112,30 @@ module.exports = {
             }
             var fieldValuesSortedCount = sortable.reverse();
             var uniqFieldValues = _.map(fieldValuesSortedCount,function(fV){return fV[0]});
+
+            var lStyle = foundLayer.styles.choropleth
             var stroke = !categoryExists ? undefined : foundLayer.styles.choropleth.stroke;
             var fill = !categoryExists ? undefined : foundLayer.styles.choropleth.fill;
             var radius = !categoryExists ? undefined : foundLayer.styles.choropleth.radius;
-            if (!categoryExists || (foundLayer.styles.choropleth.field !== field)) {
+            if (lStyle === undefined) {
+              if (buckets === undefined) {buckets = 5;};
+              if (classification === undefined) {classification = "Quantiles"};
+            } else {
+              if (buckets === undefined) {buckets = lStyle.bucketCount;};
+              if (classification === undefined) {classification = lStyle.classification;};
+            };
+            // var truthy = !categoryExists || (foundLayer.styles.choropleth.field !== field) || (foundLayer.styles.choropleth.bucketCount !== buckets) || (foundLayer.styles.choropleth.classification !== classification)
+            // console.log("truthy: " + truthy);
+            // if (truthy) {
+              console.log("Creating New Style");
+              console.log([classification,buckets])
               var newStyle = {
                 type: "choropleth",
                 geometryType: foundFC.geometryType,
                 field: field,
                 fieldHeaders: fieldHeaders,
-                classification: "Quantiles",
-                bucketCount: 5,
+                classification: classification,
+                bucketCount: buckets,
                 fieldValues: fieldValues,
                 fieldValuesCount: fieldValuesSortedCount,
                 stroke: stroke,
@@ -126,11 +143,11 @@ module.exports = {
                 radius: radius
               };
               foundLayer.styles.choropleth = generateLayerStyle(newStyle);
-            };
+            // };
             foundLayer.save(function(err,savedLayer){
               if (err) return console.log(err);
               if (!savedLayer) return;
-              console.log("Render Geometery Category: " + geometryType);
+              console.log("Render Geometery Choropleth: " + geometryType);
               // console.log(savedLayer);
               if (geometryType === "Point") {res.view('map/_point_choropleth_form', {layer: savedLayer, layout: null})};
               if (geometryType === "Polygon") {res.view('map/_polygon_choropleth_form', {layer: savedLayer, layout: null})};

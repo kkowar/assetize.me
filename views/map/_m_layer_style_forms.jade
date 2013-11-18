@@ -7,7 +7,7 @@ mixin form_color_ramp(color)
     input.colorPicker(type="text" value="#{color}")
 
 mixin form_opacity(opacity,layerID,categoryID)
-  div.form_spinner.form_opacity(id="opacity_#{layerID}_#{categoryID}")
+  .form_spinner.form_opacity(id="opacity_#{layerID}_#{categoryID}")
     input.value(value="#{parseFloat(opacity).toFixed(1)}" style="width:25px!important")
     a.plus(href="#") +
     a.minus(href="#") -
@@ -26,7 +26,7 @@ mixin form_radius(radius)
 
 mixin style_field_dropdown(fields,selectedField,layer)
   div(style="padding-top: 5px;")
-    select.layer-style-field-dropdown(id="field_#{layer.id}_#{layer.fcID}")
+    select.layer-style-dropdown.layer-style-field-dropdown(id="field_#{layer.id}_#{layer.fcID}")
       - each field in fields
         - var selected = (field === selectedField) ? true : false
         option(selected=selected)
@@ -34,7 +34,7 @@ mixin style_field_dropdown(fields,selectedField,layer)
 
 mixin bucket_dropdown(fields,selectedField,layer)
   div(style="padding-top: 5px;")
-    select.layer-bucket-dropdown(id="bucket_#{layer.id}_#{layer.fcID}")
+    select.layer-style-dropdown.layer-style-buckets-dropdown(id="bucket_#{layer.id}_#{layer.fcID}")
       - each field in fields
         - var selected = (field === selectedField) ? true : false
         option(selected=selected)
@@ -42,7 +42,15 @@ mixin bucket_dropdown(fields,selectedField,layer)
 
 mixin classification_dropdown(fields,selectedField,layer)
   div(style="padding-top: 5px;")
-    select.layer-classification-dropdown(id="classification_#{layer.id}_#{layer.fcID}")
+    select.layer-style-dropdown.layer-style-classification-dropdown(id="classification_#{layer.id}_#{layer.fcID}")
+      - each field in fields
+        - var selected = (field === selectedField) ? true : false
+        option(selected=selected)
+          = field
+
+mixin layer_style_dropdown(fields,selectedField,layer,attribute)
+  div(style="padding-top: 5px;")
+    select.layer-style-dropdown(id="#{attribute}_#{layer.id}_#{layer.fcID}" class="layer-style-#{attribute}-dropdown")
       - each field in fields
         - var selected = (field === selectedField) ? true : false
         option(selected=selected)

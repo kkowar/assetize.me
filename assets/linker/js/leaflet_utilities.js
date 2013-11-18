@@ -12,6 +12,16 @@ generateLeafletBaseMap = function () {
   return map;
 };
 
+redrawMapBounds = function(){
+  var latLngs = [];
+  _.each(gMap._layers,function(layer){
+    if (layer._latlngs) {latLngs.push(layer._latlngs)};
+  });
+  var bounds = L.latLngBounds(latLngs);
+  console.log(bounds);
+  gMap.fitBounds(bounds);
+};
+
 drawLeafletLayers = function (layers,map) {
   getLayers(layers,map);
 };
@@ -227,10 +237,29 @@ generateGeoJSONLayer = function (geoJSON,styles) {
         });
       };
 
+      if (styles.type === "choropleth") {
+        var style = styles.choropleth;
+        var styleAttributes = {
+          fillOpacity: style.fill.opacity,
+          color: style.stroke.color,
+          opacity: style.stroke.opacity,
+          weight: style.stroke.weight
+        };
+        console.log("choropleth");
+      };
+
       result = L.geoJson(geoJSON, {
           style: function (feature) {
             if (styles.type === "category") {
               styleAttributes.fillColor = _.isEmpty(fieldFills[feature.properties[style.field]]) ? style.fieldOthersFill : fieldFills[feature.properties[style.field]];
+            };
+            if (styles.type === "choropleth") {
+              var color = undefined;
+              _.each(style.fieldBreaks,function(fieldBreak,index){
+                if ((color === undefined) && (feature.properties[style.field] <= style.fieldBreaks[index + 1])) {color = style.fieldFillColor[index]};
+              });
+              console.log(color);
+              styleAttributes.fillColor = color;
             };
             return styleAttributes;
           },

@@ -29,7 +29,7 @@ mixin point_category_form(layer)
 			span.description
 				| Column
 			span.pull-right.brushes(id="fill_#{layer.id}_0")
-				+style_field_dropdown(style.fieldHeaders,style.field,layer)
+				+layer_style_dropdown(style.fieldHeaders,style.field,layer,"field")
 		.row
 			span.description
 				| Point Fill
@@ -76,22 +76,7 @@ mixin point_choropleth_form(layer)
 			span.description
 				| Column
 			span.pull-right.brushes(id="fill_#{layer.id}_0")
-				+style_field_dropdown(style.fieldHeaders,style.field,layer)
-		.row
-			span.description
-				| Buckets
-			span.pull-right.brushes(id="buckets_#{layer.id}_0")
-				+bucket_dropdown(["3 Buckets","5 Buckets","7 Buckets"],"5 Buckets",layer)
-		.row
-			span.description
-				| Classification
-			span.pull-right.brushes(id="classification_#{layer.id}_0")
-				+classification_dropdown(["Equal Interval","Quantile","Standard Deviation","Maximum Breaks","Jenks","Heads/Tails"],"Quantile",layer)
-		.row
-			span.description
-				| Color Ramp
-			span.pull-right.brushes(id="stroke_#{layer.id}_#{index}")
-				+form_color(style.fieldFillColor[index])
+				+layer_style_dropdown(style.fieldHeaders,style.field,layer,"field")
 		.row
 			span.description
 				| Point Fill
@@ -108,7 +93,24 @@ mixin point_choropleth_form(layer)
 				+form_color(style.stroke.color)
 				&nbsp;
 				+form_opacity(style.stroke.opacity,layer.id,0)
-
+		.row
+			span.description
+				| Buckets
+			span.pull-right.brushes(id="buckets_#{layer.id}_0")
+				+layer_style_dropdown(["3 Buckets","5 Buckets","7 Buckets"],style.bucketCount + " Buckets",layer,"buckets")
+		.row
+			span.description
+				| Classification
+			span.pull-right.brushes(id="classification_#{layer.id}_0")
+				+layer_style_dropdown(["Equal Intervals","Quantiles","Standard Deviation","Maximum Breaks","Jenks","Heads/Tails"],style.classification,layer,"classification")
+		- if (style.fieldBreaks != undefined)
+			- each fieldBreak, index in style.fieldBreaks
+				- if (index != (style.fieldBreaks.length - 1))
+					.row
+						span.description
+							= fieldBreak.toFixed(2) + " ~ " + style.fieldBreaks[index + 1].toFixed(2)
+						span.pull-right.brushes(id="fill_#{layer.id}_#{index}")
+							+form_color(style.fieldFillColor[index])
 
 
 

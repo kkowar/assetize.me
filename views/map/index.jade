@@ -64,16 +64,20 @@ block content
           $.ajax({url: "/map/layer?fcID=" + fcID}).done(function(data) {
             $("#map_layers").prepend(data);
             var elID = $(data).attr("id");
+            console.log(elID);
             var layerID = elID.replace("layer_","");
             $("#" + elID + " .form_color .colorPicker").colorPicker();
-            // console.log($(".layer-style-type-dropdown"));
-            $("#" + elID + " .layer-style-type-dropdown").select2();
-            $("#" + elID + " .layer-style-type-dropdown").on("click", function (e) {
-              handleStyleTypeDropdownClick(e);
-            });
-            $("#" + elID + " .layer-style-field-dropdown").select2();
-            $("#" + elID + " .layer-style-field-dropdown").on("click", function (e) {
-              handleStyleFieldDropdownClick(e);
+            //- $("#" + elID + " .layer-style-type-dropdown").select2();
+            //- $("#" + elID + " .layer-style-type-dropdown").on("click", function (e) {
+            //-   handleStyleTypeDropdownClick(e);
+            //- });
+            //- $("#" + elID + " .layer-style-field-dropdown").select2();
+            //- $("#" + elID + " .layer-style-field-dropdown").on("click", function (e) {
+            //-   handleStyleFieldDropdownClick(e);
+            //- });
+            setupSelect2DropDown("#" + elID + " select.layer-style-dropdown");
+            $("#" + elID + " select.layer-style-dropdown").on("click", function (e) {
+              handleLayerStyleDropDownClick(e);
             });
             drawLeafletLayers(gLayers,gMap);
             var arrLayersID = $(".layers-sortable").sortable("toArray");
@@ -129,23 +133,15 @@ block content
     };
 
     var setupLayerStyleDialogs = function () {
-      setupLayerStyleTypeDropDown();
+      setupLayerStyleDropdowns();
       setupColorPicker();
       setupOpacityStrokeSizeForms();
     };
     
-    var setupLayerStyleTypeDropDown = function() {
-      setupSelect2DropDown(".layer-style-type-dropdown");
-      $(".layer-style-type-dropdown").on("click", function (e) {
-        handleStyleTypeDropdownClick(e);
-      });
-      setupSelect2DropDown(".layer-style-field-dropdown");
-      $(".layer-style-field-dropdown").on("click", function (e) {
-        handleStyleFieldDropdownClick(e);
-      });
-      setupSelect2DropDown(".layer-classificiation-dropdown");
-      $(".layer-classification-dropdown").on("click", function (e) {
-        handleClassificationDropdownClick(e);
+    var setupLayerStyleDropdowns = function() {
+      setupSelect2DropDown("select.layer-style-dropdown");
+      $("select.layer-style-dropdown").on("click", function (e) {
+        handleLayerStyleDropDownClick(e);
       });
     };
 
@@ -241,75 +237,46 @@ block content
         clearInterval(polling);
         drawZIndexOrder(gLayers,gMap);
         gMap.spin(false);
+        redrawMapBounds();
       };
     };
 
-    var handleStyleTypeDropdownClick= function (e) {
+    var handleLayerStyleDropDownClick = function (e) {
       gMap.spin(true);
-      var arrValue = $(e.currentTarget).val().split("_");
-      var styleType = arrValue[0];
-      var layerID = arrValue[1];
-      var fcID = arrValue[2];
-      var layerSelector = "#layer_" + layerID;
-      $(layerSelector + " .layer-forms").html("");
-      var url = "/style/generate?type=" + styleType + "&layerID=" + layerID + "&fcID=" + fcID;
-      $.ajax({url: url}).done(function(html) {
-        $(layerSelector + " .layer-forms").html(html);
-        setupSelect2DropDown(layerSelector + " .layer-style-field-dropdown");
-        $(layerSelector + " .layer-style-field-dropdown").on("click", function (e) {
-          handleStyleFieldDropdownClick(e);
-        });
-        $(layerSelector + " .form_color .colorPicker").colorPicker();
-        gMap.removeLayer(gLayers[layerID].layer);
-        gLayers[layerID] = undefined;
-        drawLeafletLayers(gLayers,gMap);
-        gMap.spin(false);
-      });
-    };
-
-    var handleStyleFieldDropdownClick= function (e) {
-      gMap.spin(true);
-      var field = $(e.currentTarget).val();
       var layerID = $(e.currentTarget).attr("id").split("_")[1];
       var fcID = $(e.currentTarget).attr("id").split("_")[2];
-      var styleType = $(".layer-style-type-dropdown .select2-chosen").html();
-      var layerSelector = "#layer_" + layerID;
-      $(layerSelector + " .layer-forms").html("");
-      var url = "/style/generate?type=" + styleType + "&layerID=" + layerID + "&fcID=" + fcID + "&field=" + field;
-      $.ajax({url: url}).done(function(html) {
-        $(layerSelector + " .layer-forms").html(html);
-        setupSelect2DropDown(layerSelector + " .layer-style-field-dropdown");
-        $(layerSelector + " .layer-style-field-dropdown").on("click", function (e) {
-          handleStyleFieldDropdownClick(e);
+      var style = $(".layer-style-type-dropdown .select2-chosen").html();
+      var field = $(".layer-style-field-dropdown .select2-chosen").html();
+      var buckets = $(".layer-style-buckets-dropdown .select2-chosen").html()
+      if (buckets !== undefined) buckets = buckets.replace(" Buckets","");
+      var classification = $(".layer-style-classification-dropdown .select2-chosen").html();
+      data = {
+          type: style
+        , field: field
+        , buckets: buckets
+        , classification: classification
+        , fcID: fcID
+        , layerID: layerID
+      };
+      console.log(e.currentTarget);
+      console.log(data);
+      var jLayer = "#layer_" + layerID;
+      $(jLayer + " .layer-forms").html("");
+      $.ajax({url: "/style/generate", data: data}).done(function(html){
+        $(jLayer + " .layer-forms").html(html);
+        setupSelect2DropDown(jLayer + " select.layer-style-dropdown");
+        $(jLayer + " select.layer-style-dropdown").on("click", function (e) {
+          handleLayerStyleDropDownClick(e);
         });
-        $(layerSelector + " .form_color .colorPicker").colorPicker();
+        $(jLayer + " .form_color .colorPicker").colorPicker();
+        // Old Style Type Dropdown Map Actions
+        //- gMap.removeLayer(gLayers[layerID].layer);
+        //- gLayers[layerID] = undefined;
+        // New Style Type Dropdown Map Actions
         gLayers[layerID].redefine = true;
         drawLeafletLayers(gLayers,gMap);
         gMap.spin(false);
-      });
-    };
-
-    // TODO
-    var handleClassificationDropdownClick= function (e) {
-      gMap.spin(true);
-      var classification = $(e.currentTarget).val();
-      var layerID = $(e.currentTarget).attr("id").split("_")[1];
-      var fcID = $(e.currentTarget).attr("id").split("_")[2];
-      var styleType = $(".layer-style-type-dropdown .select2-chosen").html();
-      var layerSelector = "#layer_" + layerID;
-      $(layerSelector + " .layer-forms").html("");
-      var url = "/style/generate?type=" + styleType + "&layerID=" + layerID + "&fcID=" + fcID + "&field=" + field + "&classification=" + classification;
-      $.ajax({url: url}).done(function(html) {
-        $(layerSelector + " .layer-forms").html(html);
-        setupSelect2DropDown(layerSelector + " .layer-style-field-dropdown");
-        $(layerSelector + " .layer-style-field-dropdown").on("click", function (e) {
-          handleStyleFieldDropdownClick(e);
-        });
-        $(layerSelector + " .form_color .colorPicker").colorPicker();
-        gLayers[layerID].redefine = true;
-        drawLeafletLayers(gLayers,gMap);
-        gMap.spin(false);
-      });
+      })
     };
 
     var setupSelect2DropDown = function (selector) {
