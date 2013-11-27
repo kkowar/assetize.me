@@ -38,9 +38,16 @@ drawZIndexOrder = function(layers,map) {
 getLayers = function(layers,map) {
   $.ajax({url: "/layer/find"}).done(function(data) {
     _.each(data,function(layer,index){
-      getFeatures(layer,layers,map,index);
+      // getFeatures(layer,layers,map,index);
+      getTiles(layer);
     })
   });
+};
+
+getTiles = function(layer) {
+  var tileUrl = 'http://localhost:1337/map/tiles/' + layer.id + '/{z}/{x}/{y}.png'
+  var tile = new L.TileLayer(tileUrl);
+  gMap.addLayer(tile);
 };
 
 getFeatures = function(layer,layers,map,index) {

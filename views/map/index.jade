@@ -3,7 +3,6 @@ include _m_layer
 block content
   link(rel="stylesheet" href="http://cdn.leafletjs.com/leaflet-0.6.4/leaflet.css")
   script(src="http://cdn.leafletjs.com/leaflet-0.6.4/leaflet.js")
-  script(src="http://cdn.leafletjs.com/leaflet-0.6.4/leaflet.js")
   script(src='/js/leaflet.spin.js')
 
   #mapContainer
@@ -223,7 +222,7 @@ block content
     var initPollingGLayers = function() {
       gLayersCount = $("#map_layers").attr("data");
       if (gLayersCount > 0) {
-        gMap.spin(true);
+        //- gMap.spin(true);
         polling = setInterval(pollGLayers,500);
       };
     };
@@ -237,7 +236,7 @@ block content
         clearInterval(polling);
         drawZIndexOrder(gLayers,gMap);
         gMap.spin(false);
-        redrawMapBounds();
+        //- redrawMapBounds();
       };
     };
 

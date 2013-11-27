@@ -35,14 +35,18 @@ module.exports.routes = {
   '/': {
     view: 'home/index'
   },
+  '/map/tiles/:layerID/:z/:x/:y.png': {
+    controller: 'MapController',
+    action: 'tiles'
+  },
   '/table/stats': {
     controller: 'TableController',
     action: 'stats'
   },
-  '/table/search': {
-    controller: 'TableController',
-    action: 'search'
-  },
+  // '/table/search': {
+  //   controller: 'TableController',
+  //   action: 'search'
+  // },
   '/table/filter': {
     controller: 'TableController',
     action: 'filter'

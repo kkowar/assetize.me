@@ -1,5 +1,4 @@
 var ss = require('./simple_statistics');
-console.log(ss);
 
 generateLayerStyle = function (styleGuidelines) {
 	var geometryType = styleGuidelines.geometryType;

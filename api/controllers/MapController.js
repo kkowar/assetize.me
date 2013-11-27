@@ -99,6 +99,104 @@ module.exports = {
     });
   },
 
+  mapnik: function(req,res) {
+    var mapnik = require('mapnik');
+    // var carto = require('carto');
+
+    // var carto_style = "#sewer[PipeSize=8] {line-width:1;line-color:#168;}#sewer[PipeSize=10] {line-width:1;line-color:#CCC;}"
+
+    // var renderer = new carto.Renderer();
+
+    // renderer.renderMSS(carto_style,function(err,output){
+    //   console.log("Renderer Error:");
+    //   console.log(err);
+    //   console.log("Renderer Output:");
+    //   console.log(output);
+    // });
+
+    var inline = "geojson\n"
+    Feature.find().where({"fcID": "528877d8bfae560000000001"}).done(function(err,features){
+      // features = features.slice(0,19);
+      _.each(features,function(feature){
+        inline = inline + "'" + JSON.stringify(feature.geometry) + "'\n"
+      });
+
+      var xml = '<Map background-color="#00000000"><Style name="style" filter-mode="first"><Rule><LineSymbolizer stroke-width="1" stroke="#116688" /></Rule></Style></Map>';
+
+      var map = new mapnik.Map(256, 256);
+      map.fromStringSync(xml);
+      map.bufferSize = 64;
+
+      var ds = new mapnik.Datasource({type: 'csv', 'inline': inline});
+      var layer = new mapnik.Layer('sewer');
+      layer.datasource = ds;
+      layer.styles=["style"];
+      map.add_layer(layer);
+      map.zoomAll();
+      var im = new mapnik.Image(map.width, map.height);
+      map.render(im, function(err, im) {
+        if (err) {
+          throw err;
+        } else {
+          res.writeHead(200, {'Content-Type': 'image/png'});
+          res.end(im.encodeSync('png'));
+        }
+      });
+    });
+  },
+
+  tiles: function(req,res) {
+    var layerID = req.params.layerID;
+    var mapnik = require('mapnik');
+    var mercator = require('../../config/js/sphericalmercator.js');
+    Layer.findOne().where({"id": layerID}).done(function(err,layer){
+      var style_type = layer.styles.type;
+      var style = layer.styles[style_type];
+      Feature.find().where({"fcID": layer.fcID}).done(function(err,features){
+        // console.log(style);
+        var geometry_type = features[0].geometry.type;
+        var inline = "geojson\n"
+        _.each(features,function(feature){
+          inline = inline + "'" + JSON.stringify(feature.geometry) + "'\n"
+        });
+        var xml_map_start = '<Map srs="+proj=merc +a=6378137 +b=6378137 +lat_ts=0.0 +lon_0=0.0 +x_0=0.0 +y_0=0.0 +k=1.0 +units=m +nadgrids=@null +wktext +no_defs +over" background-color="#00000000">';
+        // var xml_style = '<Style name="style" filter-mode="first"><Rule><LineSymbolizer stroke-width="1" stroke="#116688" /></Rule></Style>'
+        var xml_style = '<Style name="' + layerID + '" filter-mode="first">'
+        if (geometry_type === "LineString" || geometry_type === "MultiLineString") {
+          xml_style = xml_style + '<Rule><LineSymbolizer stroke-width="' + style.stroke.weight + '" stroke="' + style.stroke.color + '" stroke-opacity="' + style.stroke.opacity + '" /></Rule>'
+        };
+        if (geometry_type === "Point") {
+          xml_style = xml_style + '<Rule><MarkersSymbolizer fill="' + style.fill.color + '" opacity="' + style.fill.opacity + '" width="' + (style.radius * 2) + '" height="' + (style.radius * 2) + '" stroke="' + style.stroke.color + '" stroke-width="' + style.stroke.weight + '" stroke-opacity="' + style.stroke.opacity + '" placement="point" marker-type="ellipse"/></Rule>'
+          // xml_style = xml_style + '<MarkersSymbolizer fill="darkorange" opacity=".7" width="20" height="10" stroke="orange" stroke-width="7" stroke-opacity=".2" placement="point" marker-type="ellipse"/>'
+        };
+        xml_style = xml_style + "</Style>";
+        // console.log(xml_style);
+        var xml_map_end = '</Map>';
+        var xml = xml_map_start + xml_style + xml_map_end;
+        var map = new mapnik.Map(256, 256);
+        map.fromStringSync(xml);
+        var bbox = mercator.xyz_to_envelope(parseInt(req.params.x),parseInt(req.params.y),parseInt(req.params.z), false);
+        var ds = new mapnik.Datasource({type: 'csv', 'inline': inline});
+        var layer = new mapnik.Layer(layerID);
+        layer.datasource = ds;
+        layer.styles=[layerID];
+        layer.srs = srs="+proj=longlat +ellps=WGS84 +datum=WGS84 +no_defs";
+        map.add_layer(layer);
+        map.bufferSize = 64;
+        map.extent = bbox;
+        var im = new mapnik.Image(map.width, map.height);
+        map.render(im, function(err, im) {
+          if (err) {
+            throw err;
+          } else {
+            res.writeHead(200, {'Content-Type': 'image/png'});
+            res.end(im.encodeSync('png'));
+          }
+        });
+      });
+    });
+  },
+
 
   /**
    * Overrides for the settings in `config/controllers.js`
@@ -124,4 +222,30 @@ module.exports = {
         //     'count': fc.totalFeatures,
         //     'visible': true
         //   }
+
+
+// {
+//     "id": "foo",
+//     "name": "foo",
+//     "srs": "+init=epsg:4326",
+//     "class": "",
+//     "Datasource": {
+//         "file": "http://example.com/file.geojson",
+//         "type": "ogr",
+//         "layer_by_index": 0 
+//     },
+//     "geometry": "polygon" 
+// }
+
+// From Cloudmade website
+// Lat/Long to Tile Numbers
+// n = 2 ^ zoom
+// xtile = ((lon_deg + 180) / 360) * n
+// ytile = (1 - (ln(tan(lat_rad) + sec(lat_rad)) / Pi)) / 2 * n
+
+// Tile Numbers to Lat/Lon
+// n = 2 ^ zoom
+// lon_deg = xtile / n * 360.0 - 180.0
+// lat_rad = arctan(sinh( Pi * (1 - 2 * ytile / n)))
+// lat_deg = lat_rad * 180.0 / Pi
 
