@@ -38,8 +38,8 @@ drawZIndexOrder = function(layers,map) {
 getLayers = function(layers,map) {
   $.ajax({url: "/layer/find"}).done(function(data) {
     _.each(data,function(layer,index){
-      // getFeatures(layer,layers,map,index);
-      getTiles(layer);
+      getFeatures(layer,layers,map,index);
+      // getTiles(layer);
     })
   });
 };
