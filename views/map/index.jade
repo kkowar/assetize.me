@@ -4,6 +4,8 @@ block content
   link(rel="stylesheet" href="http://cdn.leafletjs.com/leaflet-0.6.4/leaflet.css")
   script(src="http://cdn.leafletjs.com/leaflet-0.6.4/leaflet.js")
   script(src='/js/leaflet.spin.js')
+  script(src='/js/leaflet.utfgrid.js')
+  script(src='/js/leaflet.utilities.js')
 
   #mapContainer
     .row
@@ -66,21 +68,13 @@ block content
             console.log(elID);
             var layerID = elID.replace("layer_","");
             $("#" + elID + " .form_color .colorPicker").colorPicker();
-            //- $("#" + elID + " .layer-style-type-dropdown").select2();
-            //- $("#" + elID + " .layer-style-type-dropdown").on("click", function (e) {
-            //-   handleStyleTypeDropdownClick(e);
-            //- });
-            //- $("#" + elID + " .layer-style-field-dropdown").select2();
-            //- $("#" + elID + " .layer-style-field-dropdown").on("click", function (e) {
-            //-   handleStyleFieldDropdownClick(e);
-            //- });
             setupSelect2DropDown("#" + elID + " select.layer-style-dropdown");
             $("#" + elID + " select.layer-style-dropdown").on("click", function (e) {
               handleLayerStyleDropDownClick(e);
             });
             drawLeafletLayers(gLayers,gMap);
-            var arrLayersID = $(".layers-sortable").sortable("toArray");
-            var scrubbedIDs = _.map(arrLayersID,function(id){return id.split("_")[1]});
+            //- var arrLayersID = $(".layers-sortable").sortable("toArray");
+            //- var scrubbedIDs = _.map(arrLayersID,function(id){return id.split("_")[1]});
             // updateLayerDrawOrder(scrubbedIDs,gLayers,gMap);
             drawZIndexOrder(gLayers,gMap);
             gMap.spin(false);
@@ -97,12 +91,15 @@ block content
         var layerID = e.currentTarget.value;
         if (e.currentTarget.checked === false) {
           gMap.removeLayer(gLayers[layerID].layer);
+          gMap.removeLayer(gLayers[layerID].layerGrid);
           updateLayerVisibility(layerID,false);
         } else {
-          gLayers[layerID].layer.addTo(gMap);
+          // gLayers[layerID].layer.addTo(gMap);
+          // gLayers[layerID].layerGrid.addTo(gMap);
+          gMap.addLayer(gLayers[layerID].layer);
+          gMap.addLayer(gLayers[layerID].layerGrid);
           updateLayerVisibility(layerID,true);
         };
-        //- console.log("drawZIndexOrder");
         drawZIndexOrder(gLayers,gMap);
       });
       
@@ -112,6 +109,7 @@ block content
         $.ajax({url: "layer/destroy/" + layerID}).done(function(data){
           $("#layer_" + layerID).remove();
           gMap.removeLayer(gLayers[layerID].layer);
+          gMap.removeLayer(gLayers[layerID].layerGrid);
           // todo: put the layer name back in the option box
         });
       });

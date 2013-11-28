@@ -22,6 +22,9 @@ module.exports = {
     },
     geometry: {
       type: 'json'
+    },
+    xml: {
+      type: 'string'
     }
     
   }

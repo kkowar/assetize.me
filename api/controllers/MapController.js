@@ -146,52 +146,112 @@ module.exports = {
   },
 
   tiles: function(req,res) {
+    var grid_requested = req.url.match(".grid.json") ? true : false;
+    var req_callback = req.query.callback;
     var layerID = req.params.layerID;
     var mapnik = require('mapnik');
     var mercator = require('../../config/js/sphericalmercator.js');
     Layer.findOne().where({"id": layerID}).done(function(err,layer){
+
       var style_type = layer.styles.type;
       var style = layer.styles[style_type];
-      Feature.find().where({"fcID": layer.fcID}).done(function(err,features){
-        // console.log(style);
-        var geometry_type = features[0].geometry.type;
-        var inline = "geojson\n"
-        _.each(features,function(feature){
-          inline = inline + "'" + JSON.stringify(feature.geometry) + "'\n"
-        });
-        var xml_map_start = '<Map srs="+proj=merc +a=6378137 +b=6378137 +lat_ts=0.0 +lon_0=0.0 +x_0=0.0 +y_0=0.0 +k=1.0 +units=m +nadgrids=@null +wktext +no_defs +over" background-color="#00000000">';
-        // var xml_style = '<Style name="style" filter-mode="first"><Rule><LineSymbolizer stroke-width="1" stroke="#116688" /></Rule></Style>'
-        var xml_style = '<Style name="' + layerID + '" filter-mode="first">'
-        if (geometry_type === "LineString" || geometry_type === "MultiLineString") {
-          xml_style = xml_style + '<Rule><LineSymbolizer stroke-width="' + style.stroke.weight + '" stroke="' + style.stroke.color + '" stroke-opacity="' + style.stroke.opacity + '" /></Rule>'
-        };
-        if (geometry_type === "Point") {
-          xml_style = xml_style + '<Rule><MarkersSymbolizer fill="' + style.fill.color + '" opacity="' + style.fill.opacity + '" width="' + (style.radius * 2) + '" height="' + (style.radius * 2) + '" stroke="' + style.stroke.color + '" stroke-width="' + style.stroke.weight + '" stroke-opacity="' + style.stroke.opacity + '" placement="point" marker-type="ellipse"/></Rule>'
-          // xml_style = xml_style + '<MarkersSymbolizer fill="darkorange" opacity=".7" width="20" height="10" stroke="orange" stroke-width="7" stroke-opacity=".2" placement="point" marker-type="ellipse"/>'
-        };
-        xml_style = xml_style + "</Style>";
-        // console.log(xml_style);
-        var xml_map_end = '</Map>';
-        var xml = xml_map_start + xml_style + xml_map_end;
-        var map = new mapnik.Map(256, 256);
-        map.fromStringSync(xml);
-        var bbox = mercator.xyz_to_envelope(parseInt(req.params.x),parseInt(req.params.y),parseInt(req.params.z), false);
-        var ds = new mapnik.Datasource({type: 'csv', 'inline': inline});
-        var layer = new mapnik.Layer(layerID);
-        layer.datasource = ds;
-        layer.styles=[layerID];
-        layer.srs = srs="+proj=longlat +ellps=WGS84 +datum=WGS84 +no_defs";
-        map.add_layer(layer);
-        map.bufferSize = 64;
-        map.extent = bbox;
-        var im = new mapnik.Image(map.width, map.height);
-        map.render(im, function(err, im) {
+      var geometry_type = layer.geometryType;
+
+      // var tileLat = tileY2lat(req.params.y,req.params.z);
+      // var tileLon = tileX2lon(req.params.x,req.params.z);
+
+      var bbox = mercator.xyz_to_envelope(parseInt(req.params.x),parseInt(req.params.y),parseInt(req.params.z), false);
+      var min = metersToLatLon(bbox[0],bbox[1]);
+      var max = metersToLatLon(bbox[2],bbox[3]);
+      var poly_bbox = [min[0],min[1],max[0],max[1]];
+      var poly_coords = [[poly_bbox[1],poly_bbox[0]],[poly_bbox[1],poly_bbox[2]],[poly_bbox[3],poly_bbox[2]],[poly_bbox[3],poly_bbox[0]],[poly_bbox[1],poly_bbox[0]]];
+      
+      Feature.native(function (err,collection) {
+        collection.find({"fcID": layer.fcID, geometry:{$geoIntersects:{$geometry:{type:"Polygon",coordinates: [ poly_coords ]}}}}).toArray(function(err, features) {
           if (err) {
-            throw err;
+            console.log(err);
+            return res.json({err: err});
+          };
+
+          var xml_map_start = '<Map srs="+proj=merc +a=6378137 +b=6378137 +lat_ts=0.0 +lon_0=0.0 +x_0=0.0 +y_0=0.0 +k=1.0 +units=m +nadgrids=@null +wktext +no_defs +over" background-color="#00000000">';
+          var xml_style = "";
+
+          if (features.length !== 0) {
+
+            // features = features.slice(0,19);
+
+            var headers = _.map(features[0].properties,function(value,key){return key;});
+
+            var inline = headers.join(",") + ",geojson\n"
+            _.each(features,function(feature){
+              // var values = _.map(feature.properties,function(value,key){return '"' + JSON.stringify(value) + '"';});
+              // inline = inline + values.join(",") + ",'" + JSON.stringify(feature.geometry) + "'\n"
+              inline = inline + feature.xml;
+            });
+
+            xml_style = '<Style name="' + layerID + '" filter-mode="first">'
+            
+            if (geometry_type === "LineString" || geometry_type === "MultiLineString") {
+              xml_style = xml_style + '<Rule><LineSymbolizer stroke-width="' + style.stroke.weight + '" stroke="' + style.stroke.color + '" stroke-opacity="' + style.stroke.opacity + '" /></Rule>'
+            };
+
+            if (geometry_type === "Point") {
+              xml_style = xml_style + '<Rule><MarkersSymbolizer fill="' + style.fill.color + '" opacity="' + style.fill.opacity + '" width="' + (style.radius * 2) + '" height="' + (style.radius * 2) + '" stroke="' + style.stroke.color + '" stroke-width="' + style.stroke.weight + '" stroke-opacity="' + style.stroke.opacity + '" placement="point" marker-type="ellipse"/></Rule>'
+            };
+
+            if (geometry_type === "Polygon") {
+              // xml_style = xml_style + '<Rule><MarkersSymbolizer fill="' + style.fill.color + '" opacity="' + style.fill.opacity + '" width="' + (style.radius * 2) + '" height="' + (style.radius * 2) + '" stroke="' + style.stroke.color + '" stroke-width="' + style.stroke.weight + '" stroke-opacity="' + style.stroke.opacity + '" placement="point" marker-type="ellipse"/></Rule>'
+            };
+
+            xml_style = xml_style + "</Style>";
+
           } else {
-            res.writeHead(200, {'Content-Type': 'image/png'});
-            res.end(im.encodeSync('png'));
-          }
+            var headers = [];
+          };
+
+          var xml_map_end = '</Map>';
+          var xml = xml_map_start + xml_style + xml_map_end;
+
+          var map = new mapnik.Map(256, 256);
+          map.fromStringSync(xml);
+          map.bufferSize = 64;
+          map.extent = bbox;
+
+          if (features.length !== 0) {
+            var ds = new mapnik.Datasource({type: 'csv', 'inline': inline});
+            var layer = new mapnik.Layer(layerID);
+            layer.datasource = ds;
+            layer.styles=[layerID];
+            layer.srs = srs="+proj=longlat +ellps=WGS84 +datum=WGS84 +no_defs";
+            map.add_layer(layer);
+          };
+
+          if (grid_requested) {
+            if (features.length !== 0) {
+              var utfGrid = new mapnik.Grid(map.width, map.height);
+              map.render(utfGrid,{layer: layerID, fields: headers},function(err, utfGrid) {
+                if (err) {
+                  throw err;
+                } else {
+                  res.writeHead(200, {'Content-Type': 'application/json; charset=utf-8'});
+                  var encodedUtfGrid = utfGrid.encodeSync('utf', {resolution: 2});
+                  res.end(req_callback  + "(" + JSON.stringify(encodedUtfGrid) + ")");
+                };
+              });
+            } else {
+              res.json({});
+            };
+          } else {
+            var im = new mapnik.Image(map.width, map.height);
+            map.render(im, function(err, im) {
+              if (err) {
+                throw err;
+              } else {
+                res.writeHead(200, {'Content-Type': 'image/png'});
+                res.end(im.encodeSync('png'));
+              };
+            });
+          };
         });
       });
     });

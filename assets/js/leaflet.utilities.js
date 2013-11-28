@@ -9,7 +9,68 @@ generateLeafletBaseMap = function () {
   var osm = new L.TileLayer(osmUrl, {minZoom: 8, maxZoom: 20, attribution: osmAttrib}); 
   map.setView(new L.LatLng(39.97407, -105.14901),14);
   map.addLayer(osm);
+  map.on('click', function(e){
+    var data = getUtfGridData(e);
+    console.log(data);
+    var html = generateMultiplePopupHTML(data);
+    if (data.length !== 0) {
+      var popup = L.popup();
+      popup
+        .setLatLng(e.latlng)
+        .setContent(html)
+        .openOn(map);
+    };
+  });
   return map;
+};
+
+getUtfGridData = function (e) {
+  var map = gMap,
+      point = map.project(e.latlng),
+      tileSize = 256,
+      resolution = 2,
+      x = Math.floor(point.x / tileSize),
+      y = Math.floor(point.y / tileSize),
+      gridX = Math.floor((point.x - (x * tileSize)) / resolution),
+      gridY = Math.floor((point.y - (y * tileSize)) / resolution),
+    max = map.options.crs.scale(map.getZoom()) / tileSize;
+
+  x = (x + max) % max;
+  y = (y + max) % max;
+
+  var data = [];
+  _.each(map._layers,function(layer){
+    if (layer._cache) {data.push(utfData(layer._cache[map.getZoom() + '_' + x + '_' + y],gridX,gridY,e));};
+  });
+  return _.compact(data);
+};
+
+utfData = function(data,gridX,gridY,e) {
+  // var data = cache[map.getZoom() + '_' + x + '_' + y];
+  if (!data) {
+    // return { latlng: e.latlng, data: null };
+    return null;
+  }
+
+  var idx = utfGridDecode(data.grid[gridY].charCodeAt(gridX)),
+      key = data.keys[idx],
+      result = data.data[key];
+
+  if (!data.data.hasOwnProperty(key)) {
+    result = null;
+  }
+
+  return result;
+};
+
+utfGridDecode = function (c) {
+  if (c >= 93) {
+    c--;
+  }
+  if (c >= 35) {
+    c--;
+  }
+  return c - 32;
 };
 
 redrawMapBounds = function(){
@@ -39,15 +100,36 @@ getLayers = function(layers,map) {
   $.ajax({url: "/layer/find"}).done(function(data) {
     _.each(data,function(layer,index){
       // getFeatures(layer,layers,map,index);
-      getTiles(layer);
+      getTiles(layer,layers,map);
     })
   });
 };
 
-getTiles = function(layer) {
+getTiles = function(layer,layers,map) {
+  if (layers[layer.id] === undefined) layers[layer.id] = {};
+
+  if (layers[layer.id].layer !== undefined) {
+    if (map.hasLayer(layers[layer.id].layer)) map.removeLayer(layers[layer.id].layer);
+  };
+
   var tileUrl = 'http://localhost:1337/map/tiles/' + layer.id + '/{z}/{x}/{y}.png'
-  var tile = new L.TileLayer(tileUrl);
-  gMap.addLayer(tile);
+  var tileLayer = new L.TileLayer(tileUrl);
+  gMap.addLayer(tileLayer);
+  layers[layer.id].layer = tileLayer;
+
+  var utfGridUrl = 'http://localhost:1337/map/tiles/' + layer.id + '/{z}/{x}/{y}.grid.json?callback={cb}'
+  var utfGridLayer = new L.UtfGrid(utfGridUrl, {resolution: 2});
+  gMap.addLayer(utfGridLayer);
+  layers[layer.id].layerGrid = utfGridLayer;
+
+  layers[layer.id].redefine = false;
+  if (layers[layer.id].zIndex === undefined) {layers[layer.id].zIndex = tileLayer.zIndex};
+  // if (layer.visible === "true") {
+  //   if (filteredLayer) {
+  // //     filteredLayer.addTo(map);
+  // //     drawZIndexOrder(gLayers,gMap);
+  //   };
+  // };
 };
 
 getFeatures = function(layer,layers,map,index) {
@@ -286,6 +368,20 @@ generatePopupHTML = function(properties) {
   var html = "<div class='popup-content-wrapper'><dl>";
   _.each(properties, function (value,key) {
     html = html + "<dt>" + key + "</dt><dd>" + value + "</dd>";
+  });
+  html = html + "</dl></div>";
+  html = html + "<div class='popup-content-footer pull-right'><span class='glyphicon glyphicon-edit' title='Edit'></span>&nbsp;<span class='glyphicon glyphicon-remove' title='Delete'></span></div>";
+  return html;
+};
+
+generateMultiplePopupHTML = function(utf_hits) {
+  var html = "<div class='popup-content-wrapper'><dl>";
+  _.each(utf_hits,function(hit){
+    html = html + "<div style='background-color: #CCC'>utf hit</div>"
+    _.each(hit, function (value,key) {
+      html = html + "<dt>" + key + "</dt><dd>" + value + "</dd>";
+    });
+    html = html + "<div>&nbsp;</div>"
   });
   html = html + "</dl></div>";
   html = html + "<div class='popup-content-footer pull-right'><span class='glyphicon glyphicon-edit' title='Edit'></span>&nbsp;<span class='glyphicon glyphicon-remove' title='Delete'></span></div>";

@@ -78,12 +78,14 @@ createFeatureCollection = function (name,fc) {
 };
 
 createFeature = function (feature,fcID,index) {
+  var xml = _.map(feature.properties,function(value,key){return '"' + JSON.stringify(value) + '"';}).join(",") + ",'" + JSON.stringify(feature.geometry) + "'\n";
   var f = {
     fcID: fcID,
     fID: index,
     type: "Feature",
     properties: feature.properties,
-    geometry: feature.geometry
+    geometry: feature.geometry,
+    xml: xml
   };
   Feature.create(f).done(function (err,createdFeature) {
     if (err) return console.log(err);
