@@ -1,11 +1,12 @@
 extends ../layout
 include _m_layer
 block content
-  link(rel="stylesheet" href="http://cdn.leafletjs.com/leaflet-0.6.4/leaflet.css")
-  script(src="http://cdn.leafletjs.com/leaflet-0.6.4/leaflet.js")
+  link(rel="stylesheet" href="http://cdn.leafletjs.com/leaflet-0.7/leaflet.css")
+  script(src="http://cdn.leafletjs.com/leaflet-0.7/leaflet.js")
   script(src='/js/leaflet.spin.js')
   script(src='/js/leaflet.utfgrid.js')
   script(src='/js/leaflet.utilities.js')
+  script(src='/js/leaflet.tile.interaction.js')
 
   #mapContainer
     .row
@@ -94,8 +95,6 @@ block content
           gMap.removeLayer(gLayers[layerID].layerGrid);
           updateLayerVisibility(layerID,false);
         } else {
-          // gLayers[layerID].layer.addTo(gMap);
-          // gLayers[layerID].layerGrid.addTo(gMap);
           gMap.addLayer(gLayers[layerID].layer);
           gMap.addLayer(gLayers[layerID].layerGrid);
           updateLayerVisibility(layerID,true);
@@ -161,8 +160,8 @@ block content
         var layerID = targetSplit[1];
         var subLayerID = targetSplit[2];
         var newColor = e.target.value;
-        console.log([action,layerID,subLayerID,newColor]);
-        updateLayerColor(layerID,newColor,action,subLayerID,gLayers);
+        //- console.log([action,layerID,subLayerID,newColor]);
+        updateTileLayerColor(layerID,newColor,action,subLayerID,gLayers);
       });
     };
 
@@ -205,8 +204,9 @@ block content
           if (attribute === 'radius') {
             style = {radius: fixedInputVal};
           };
-          gLayers[layerID].layer.setStyle(style);
-          updateLayerStyle(layerID,fixedInputVal,action,attribute);
+          //- Geojson Layer Update
+          //- updateGeojsonLayerStyle(layerID,fixedInputVal,action,attribute,layers);
+          updateTileLayerStyle(layerID,fixedInputVal,action,attribute,gLayers);
         };
       });
     };
@@ -215,6 +215,9 @@ block content
       gMap = generateLeafletBaseMap();
       initPollingGLayers();
       drawLeafletLayers(gLayers,gMap);
+      var arrLayersID = $(".layers-sortable").sortable("toArray");
+      var scrubbedIDs = _.map(arrLayersID,function(id){return id.split("_")[1]});
+      updateLayerDrawOrder(scrubbedIDs,gLayers,gMap);
     };
 
     var initPollingGLayers = function() {

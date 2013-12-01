@@ -290,8 +290,9 @@ block content
     };
 
     var showFilterModal = function (fieldIndex,fcID) {
-      var jSelector = $("#dropdown_menu_" + fcID + "_" + fieldIndex);
+      var jSelector = $("#dropdown_menu_" + fcID + "_" + fieldIndex + " div");
       var fieldName = jSelector.html().split("&nbsp;")[0];
+      console.log(fieldName);
       $("#filterColumnModalLabel").html("Filter data by column <strong>\"" + fieldName + "\"</strong>");
       $("#filterColumnModal input#filter_fieldIndex").val(fieldIndex);
       $("#filterColumnModal input#filter_fieldName").val(fieldName);

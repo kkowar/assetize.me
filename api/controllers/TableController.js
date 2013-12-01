@@ -45,7 +45,7 @@ module.exports = {
     var action = req.query.action;
     var value = req.query.value;
     var fcID = req.query.fcID;
-    console.log([action,value,fcID]);
+    // console.log([action,value,fcID]);
 
     if (action === "column") {
 
@@ -65,9 +65,9 @@ module.exports = {
           Feature.find({"fcID": fcID}).done(function(err,foundFeatures) {
             if (err) return console.log(err);
             if (foundFeatures.length === 0) return console.log(foundFeatures);
-            // foundFeatures = foundFeatures.slice(0,1);
             _.each(foundFeatures,function(feature) {
               feature.properties = _.omit(feature.properties,property.name);
+              feature.xml = createFeatureXML(feature);
               feature.save(function(err,savedFeature) {
                 if (err) return console.log(err);
                 if (!savedFeature) return console.log(savedFeature);
@@ -78,7 +78,6 @@ module.exports = {
         });
       });
     };
-    // res.json({message: "No action taken."});
   },
 
   update: function(req,res) {

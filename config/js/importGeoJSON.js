@@ -10,15 +10,23 @@ importGeoJSON = function (name,fileName) {
 
 createFeatureCollection = function (name,fc) {
   var jade = require('jade');
+
+  // Get the attribute/property headers.
   var fcProperties = [];
   _.each(fc.features[0].properties,function(value,key){
     fcProperties.push({"name": key, "type": ""});
   });
+
+  // Get the geometry type of the import file.
   try{
     var geometryType = fc.features[0].geometry.type;
   } catch(err) {
     var geometryType = undefined;
   };
+
+  // Consolidate values for each column and then attempt
+  // to determine the column type of string, number, date,
+  // boolean
   var fieldValues = [];
   _.each(fcProperties,function(fcProperty,i){
     // console.log(i);
@@ -35,7 +43,7 @@ createFeatureCollection = function (name,fc) {
     var filtered = undefined;
     propType = _.isEmpty(values) ? "String" : undefined;
     if (propType === undefined) {
-      propType = _.isEmpty(_.filter(values,function(value) {return _.isNumber(value);})) ? undefined : "Number"
+      propType = _.isEmpty(_.filter(values,function(value) {return _.isFinite(value);})) ? undefined : "Number"
       if (propType === undefined) {
         propType = _.isEmpty(_.filter(values,function(value) {return value.match(/^-?[0-9]+$/);})) ? undefined : "Number"
       };
@@ -54,9 +62,12 @@ createFeatureCollection = function (name,fc) {
     fcProperties[i].type = propType;
   });
   // console.log(fieldValues);
+
+  // Setup new FeatureCollecton object.
   var newFC = {name: name, 
                properties: fcProperties, 
                geometryType: geometryType, 
+               // todo: update length after dealing with multi type geometries.
                totalFeatures: fc.features.length
               };
   FeatureCollection.create(newFC).done(function (err,createdFC) {
@@ -65,27 +76,66 @@ createFeatureCollection = function (name,fc) {
       if (err) return console.log(err);
       jade.renderFile(__dirname + '/../../views/featurecollection/_fc_row.jade',{fc: savedFC}, function (err, html) {
         if (err) throw err;
-        console.log("renderFile");
-        console.log(html);
         FeatureCollection.publishCreate({id: savedFC.id, featureCollection: savedFC, html: html});
       });
       var fcID = savedFC.id;
       _.each(fc.features,function (feature,index) {
-        createFeature(feature,fcID,index);
+        if (feature.geometry.type !== "MultiPolygon") {
+          createFeature(feature,fcID,index);
+        } else {
+          parseMultiPolygon(feature,fcID,index);
+        };
       });
+      // console.log("skippedFeatures: " + skippedFeatures);
     });
   });
 };
 
+parseMultiPolygon = function (feature,fcID,index) {
+  console.log("Coordinate Length");
+  console.log(feature.geometry.coordinates.length);
+  // console.log(feature.geometry.coordinates);
+  _.each(feature.geometry.coordinates,function(aCoordinates,aIndex){
+    // console.log(aCoordinates[0]);
+    var inPolygon = false;
+    _.each(feature.geometry.coordinates,function(bCoordinates,bIndex){
+      if ((inPolygon === false) && (aIndex !== bIndex)) {
+        _.each(aCoordinates[0],function(coordinate){
+          inPolygon = pointInPolygon(coordinate,bCoordinates[0]);
+        });
+      };
+    });
+    console.log(inPolygon);
+  });
+};
+
+pointInPolygon = function (point, vs) {
+  // ray-casting algorithm based on
+  // http://www.ecse.rpi.edu/Homepages/wrf/Research/Short_Notes/pnpoly.html
+  
+  var x = point[0], y = point[1];
+  
+  var inside = false;
+  for (var i = 0, j = vs.length - 1; i < vs.length; j = i++) {
+      var xi = vs[i][0], yi = vs[i][1];
+      var xj = vs[j][0], yj = vs[j][1];
+      
+      var intersect = ((yi > y) != (yj > y))
+          && (x < (xj - xi) * (y - yi) / (yj - yi) + xi);
+      if (intersect) inside = !inside;
+  }
+  
+  return inside;
+};
+
 createFeature = function (feature,fcID,index) {
-  var xml = _.map(feature.properties,function(value,key){return '"' + JSON.stringify(value) + '"';}).join(",") + ",'" + JSON.stringify(feature.geometry) + "'\n";
   var f = {
     fcID: fcID,
     fID: index,
     type: "Feature",
     properties: feature.properties,
     geometry: feature.geometry,
-    xml: xml
+    xml: createFeatureXML(feature)
   };
   Feature.create(f).done(function (err,createdFeature) {
     if (err) return console.log(err);
@@ -94,3 +144,32 @@ createFeature = function (feature,fcID,index) {
     });
   });
 };
+
+createFeatureXML = function (feature) {
+  var mapped_properties = _.map(feature.properties,function(value,key){
+    try {
+      var addQuotes = false;
+      if (value === null) {
+        value = _.isNull(value) ? "null" : value;
+      };
+      if (_.isString(value)) {
+        value = value.replace(/\\/g,"\\\\"); 
+        value = value.replace(/"/g,'\\"');
+        if (!addQuotes) {
+          addQuotes = value.match(",") ? true : false;
+        };
+      };
+      value = addQuotes ? '"' + value + '"' : value;
+      // value = '"' + value + '"';
+      return value;
+    } 
+    catch (err) {
+      console.log(err);
+      return value;
+    };    
+  })
+  // console.log(mapped_properties.join(","));
+  var xml = mapped_properties.join(",") + ',"' + JSON.stringify(feature.geometry).replace(/"/g,'\\"') + '"\n';
+  return xml;
+}
+

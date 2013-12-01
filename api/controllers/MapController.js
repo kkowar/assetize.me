@@ -167,53 +167,114 @@ module.exports = {
       var poly_coords = [[poly_bbox[1],poly_bbox[0]],[poly_bbox[1],poly_bbox[2]],[poly_bbox[3],poly_bbox[2]],[poly_bbox[3],poly_bbox[0]],[poly_bbox[1],poly_bbox[0]]];
       
       Feature.native(function (err,collection) {
-        collection.find({"fcID": layer.fcID, geometry:{$geoIntersects:{$geometry:{type:"Polygon",coordinates: [ poly_coords ]}}}}).toArray(function(err, features) {
+        // collection.find({"fcID": layer.fcID, geometry:{$geoIntersects:{$geometry:{type:"Polygon",coordinates: [ poly_coords ]}}}}).toArray(function(err, features) {
+        collection.find({"fcID": layer.fcID}).toArray(function(err, features) {
           if (err) {
             console.log(err);
             return res.json({err: err});
           };
-
+          // todo: consider maximum-extent property
+          // '-20037508.34, -20037508.34, 20037508.34, 20037508.34' by setting it as a property of the mapnik.Map object.
           var xml_map_start = '<Map srs="+proj=merc +a=6378137 +b=6378137 +lat_ts=0.0 +lon_0=0.0 +x_0=0.0 +y_0=0.0 +k=1.0 +units=m +nadgrids=@null +wktext +no_defs +over" background-color="#00000000">';
           var xml_style = "";
 
           if (features.length !== 0) {
 
-            // features = features.slice(0,19);
-
+            // todo: handle headers with spaces;
             var headers = _.map(features[0].properties,function(value,key){return key;});
 
             var inline = headers.join(",") + ",geojson\n"
             _.each(features,function(feature){
-              // var values = _.map(feature.properties,function(value,key){return '"' + JSON.stringify(value) + '"';});
-              // inline = inline + values.join(",") + ",'" + JSON.stringify(feature.geometry) + "'\n"
+              // console.log(feature.xml);
               inline = inline + feature.xml;
             });
 
-            xml_style = '<Style name="' + layerID + '" filter-mode="first">'
-            
-            if (geometry_type === "LineString" || geometry_type === "MultiLineString") {
-              xml_style = xml_style + '<Rule><LineSymbolizer stroke-width="' + style.stroke.weight + '" stroke="' + style.stroke.color + '" stroke-opacity="' + style.stroke.opacity + '" /></Rule>'
+            // filter-mode="all"
+            xml_style = '<Style name="' + layerID + '" filter-mode="first">\n';
+
+            if (style_type === "simple") {
+
+              xml_style = xml_style + '<Rule>';
+              
+              if (geometry_type === "LineString" || geometry_type === "Polygon") {
+                xml_style = xml_style + '<LineSymbolizer stroke-width="' + style.stroke.weight + '" stroke="' + style.stroke.color + '" stroke-opacity="' + style.stroke.opacity + '" />'
+              };
+
+              if (geometry_type === "Point") {
+                xml_style = xml_style + '<MarkersSymbolizer fill="' + style.fill.color + '" opacity="' + style.fill.opacity + '" width="' + (style.radius * 2) + '" height="' + (style.radius * 2) + '" stroke="' + style.stroke.color + '" stroke-width="' + style.stroke.weight + '" stroke-opacity="' + style.stroke.opacity + '" placement="point" marker-type="ellipse" allow-overlap="true"/>'
+              };
+
+              if (geometry_type === "Polygon") {
+                xml_style = xml_style + '<PolygonSymbolizer fill="' + style.fill.color + '" fill-opacity="' + style.fill.opacity + '" />'
+              };
+
+              xml_style = xml_style + "</Rule>\n";
+
             };
 
-            if (geometry_type === "Point") {
-              xml_style = xml_style + '<Rule><MarkersSymbolizer fill="' + style.fill.color + '" opacity="' + style.fill.opacity + '" width="' + (style.radius * 2) + '" height="' + (style.radius * 2) + '" stroke="' + style.stroke.color + '" stroke-width="' + style.stroke.weight + '" stroke-opacity="' + style.stroke.opacity + '" placement="point" marker-type="ellipse"/></Rule>'
+            if (style_type === "category") {
+              // Category Style Rules
+              _.each(style.fieldValues,function(fieldValue,index){
+                xml_style = xml_style + '<Rule>\n';
+                // (!isNaN(parseFloat(fieldValue)) && isFinite(fieldValue))
+                if (_.isFinite(fieldValue)) {
+                  xml_style = xml_style + '<Filter>[' + style.field + '] = ' + fieldValue + '</Filter>';
+                } else {
+                  xml_style = xml_style + '<Filter>[' + style.field + '] = "' + fieldValue.replace(/"/g,'\\"') + '"</Filter>';
+                };
+                
+
+                if (geometry_type === "Point") {
+                  xml_style = xml_style + '<MarkersSymbolizer fill="' + style.fieldFillColor[index] + '" opacity="' + style.fill.opacity + '" width="' + (style.radius * 2) + '" height="' + (style.radius * 2) + '" stroke="' + style.stroke.color + '" stroke-width="' + style.stroke.weight + '" stroke-opacity="' + style.stroke.opacity + '" placement="point" marker-type="ellipse" allow-overlap="true"/>\n'
+                };
+
+                xml_style = xml_style + "</Rule>\n";
+              });
+              // All Other Values Style Rule
+              xml_style = xml_style + '<Rule>\n';
+              xml_style = xml_style + '<ElseFilter/>\n';
+              if (geometry_type === "Point") {
+                xml_style = xml_style + '<MarkersSymbolizer fill="' + style.fieldOthersFill + '" opacity="' + style.fill.opacity + '" width="' + (style.radius * 2) + '" height="' + (style.radius * 2) + '" stroke="' + style.stroke.color + '" stroke-width="' + style.stroke.weight + '" stroke-opacity="' + style.stroke.opacity + '" placement="point" marker-type="ellipse" allow-overlap="true"/>\n'
+              };
+              xml_style = xml_style + "</Rule>\n";
             };
 
-            if (geometry_type === "Polygon") {
-              // xml_style = xml_style + '<Rule><MarkersSymbolizer fill="' + style.fill.color + '" opacity="' + style.fill.opacity + '" width="' + (style.radius * 2) + '" height="' + (style.radius * 2) + '" stroke="' + style.stroke.color + '" stroke-width="' + style.stroke.weight + '" stroke-opacity="' + style.stroke.opacity + '" placement="point" marker-type="ellipse"/></Rule>'
+            if (style_type === "choropleth") {
+              // Category Style Rules
+              _.each(style.fieldBreaks,function(fieldBreak,index){
+                if (style.fieldBreaks[index + 1] !== undefined) {
+                  xml_style = xml_style + '<Rule>\n';
+
+                  xml_style = xml_style + '<Filter>[' + style.field + '] &lt; ' + style.fieldBreaks[index + 1] + '</Filter>';
+
+                  if (geometry_type === "Point") {
+                    xml_style = xml_style + '<MarkersSymbolizer fill="' + style.fieldFillColor[index] + '" opacity="' + style.fill.opacity + '" width="' + (style.radius * 2) + '" height="' + (style.radius * 2) + '" stroke="' + style.stroke.color + '" stroke-width="' + style.stroke.weight + '" stroke-opacity="' + style.stroke.opacity + '" placement="point" marker-type="ellipse" allow-overlap="true"/>\n'
+                  };
+
+                  xml_style = xml_style + "</Rule>\n";
+                };
+              });
             };
 
-            xml_style = xml_style + "</Style>";
+            xml_style = xml_style + '</Style>\n';
 
           } else {
             var headers = [];
           };
 
+          // console.log(xml_style);
           var xml_map_end = '</Map>';
           var xml = xml_map_start + xml_style + xml_map_end;
 
           var map = new mapnik.Map(256, 256);
-          map.fromStringSync(xml);
+          try {
+            map.fromStringSync(xml);
+          } 
+          catch(err) {
+            console.log("We have an error!");
+            console.log(xml);
+            console.log(err);
+          };
           map.bufferSize = 64;
           map.extent = bbox;
 

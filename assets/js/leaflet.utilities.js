@@ -377,11 +377,13 @@ generatePopupHTML = function(properties) {
 generateMultiplePopupHTML = function(utf_hits) {
   var html = "<div class='popup-content-wrapper'><dl>";
   _.each(utf_hits,function(hit){
-    html = html + "<div style='background-color: #CCC'>utf hit</div>"
+    html = html + "<div style='background-color: #CCC'>utf hit</div>";
     _.each(hit, function (value,key) {
       html = html + "<dt>" + key + "</dt><dd>" + value + "</dd>";
     });
-    html = html + "<div>&nbsp;</div>"
+    if (utf_hits.length > 1) {
+      html = html + "<div>&nbsp;</div>"
+    };
   });
   html = html + "</dl></div>";
   html = html + "<div class='popup-content-footer pull-right'><span class='glyphicon glyphicon-edit' title='Edit'></span>&nbsp;<span class='glyphicon glyphicon-remove' title='Delete'></span></div>";
@@ -396,13 +398,13 @@ generatePropertiesArray = function(properties) {
   return arrProperties;
 };
 
-updateLayerColor = function(layerID,newColor,action,subLayerID,layers) {
+updateTileLayerColor = function(layerID,newColor,action,subLayerID,layers) {
 
   $.ajax({url: "layer/find/" + layerID}).done(function(data){
 
     var styleType = data.styles.type;
     var geometryType = data.geometryType;
-    console.log(geometryType);
+
     if (styleType === "category") {
       if (subLayerID !== "others") {
         if ((geometryType === "Point") || (geometryType === "Polygon")) {
@@ -434,145 +436,155 @@ updateLayerColor = function(layerID,newColor,action,subLayerID,layers) {
     };
 
     $.ajax({url: "layer/update/" + layerID, data: data}).done(function(data){
-      if (styleType === "category") {
-
-        fieldFills = {};
-        _.each(data.styles.category.fieldValues,function(fieldValue,index){
-          fieldFills[fieldValue] = data.styles.category.fieldFillColor[index];
-        });
-
-        if (action === "fill") {
-          _.each(layers[data.id].layer._layers,function(layer){
-            var fillColor = fieldFills[layer.feature.properties[data.styles.category.field]];
-            fillColor = (fillColor === undefined) ? data.styles.category.fieldOthersFill : fillColor
-            // console.log(fillColor);
-            // layer.setStyle({fillColor: fillColor});
-            layer.setStyle({fillColor: fillColor});
-          });
-        };
-
-        if (action === "stroke") {
-          if ((geometryType === "Point") || (geometryType === "Polygon")) {
-            var color = data.styles.category.stroke.color;
-            console.log(color);
-            _.each(layers[data.id].layer._layers,function(layer){
-              layer.setStyle({color: color});
-            });
-          };
-
-          if ((geometryType === "LineString") || (geometryType === "MultiLineString")) {
-            _.each(layers[data.id].layer._layers,function(layer){
-              var color = fieldFills[layer.feature.properties[data.styles.category.field]];
-              color = (color === undefined) ? data.styles.category.fieldOthersFill : color
-              layer.setStyle({color: color});
-            });
-          };
-        };
-
-      };
-
-      if (styleType === "choropleth") {
-
-        fieldFills = {};
-        _.each(data.styles.choropleth.fieldValues,function(fieldValue,index){
-          fieldFills[fieldValue] = data.styles.choropleth.fieldFillColor[index];
-        });
-
-        if (action === "fill") {
-          _.each(layers[data.id].layer._layers,function(layer){
-            var fillColor = fieldFills[layer.feature.properties[data.styles.choropleth.field]];
-            fillColor = (fillColor === undefined) ? data.styles.choropleth.fieldOthersFill : fillColor
-            // console.log(fillColor);
-            // layer.setStyle({fillColor: fillColor});
-            layer.setStyle({fillColor: fillColor});
-          });
-        };
-
-        if (action === "stroke") {
-          if ((geometryType === "Point") || (geometryType === "Polygon")) {
-            var color = data.styles.choropleth.stroke.color;
-            console.log(color);
-            _.each(layers[data.id].layer._layers,function(layer){
-              layer.setStyle({color: color});
-            });
-          };
-
-          if ((geometryType === "LineString") || (geometryType === "MultiLineString")) {
-            _.each(layers[data.id].layer._layers,function(layer){
-              var color = fieldFills[layer.feature.properties[data.styles.choropleth.field]];
-              color = (color === undefined) ? data.styles.choropleth.fieldOthersFill : color
-              layer.setStyle({color: color});
-            });
-          };
-        };
-
-      };
-
-      if (styleType === "simple") {
-        var style = undefined;
-        if (action === "fill") {style = {fillColor: data.styles.simple.fill.color}};
-        if (action === "stroke") {style = {color: data.styles.simple.stroke.color}};
-        layers[layerID].layer.setStyle(style);
-      };
-
+      replaceTileLayer(layers[data.id].layer);
     });
   });
 };
 
-updateLayerStyle = function(layerID,value,action,attribute) {
+// todo: Finish updating this function to work. 
+updateGeojsonLayerColor = function() {
+  if (styleType === "category") {
+
+    fieldFills = {};
+    _.each(data.styles.category.fieldValues,function(fieldValue,index){
+      fieldFills[fieldValue] = data.styles.category.fieldFillColor[index];
+    });
+
+    if (action === "fill") {
+      _.each(layers[data.id].layer._layers,function(layer){
+        var fillColor = fieldFills[layer.feature.properties[data.styles.category.field]];
+        fillColor = (fillColor === undefined) ? data.styles.category.fieldOthersFill : fillColor
+        layer.setStyle({fillColor: fillColor});
+      });
+    };
+
+    if (action === "stroke") {
+      if ((geometryType === "Point") || (geometryType === "Polygon")) {
+        var color = data.styles.category.stroke.color;
+        console.log(color);
+        _.each(layers[data.id].layer._layers,function(layer){
+          layer.setStyle({color: color});
+        });
+      };
+
+      if ((geometryType === "LineString") || (geometryType === "MultiLineString")) {
+        _.each(layers[data.id].layer._layers,function(layer){
+          var color = fieldFills[layer.feature.properties[data.styles.category.field]];
+          color = (color === undefined) ? data.styles.category.fieldOthersFill : color
+          layer.setStyle({color: color});
+        });
+      };
+    };
+
+  };
+
+  if (styleType === "choropleth") {
+
+    fieldFills = {};
+    _.each(data.styles.choropleth.fieldValues,function(fieldValue,index){
+      fieldFills[fieldValue] = data.styles.choropleth.fieldFillColor[index];
+    });
+
+    if (action === "fill") {
+      _.each(layers[data.id].layer._layers,function(layer){
+        var fillColor = fieldFills[layer.feature.properties[data.styles.choropleth.field]];
+        fillColor = (fillColor === undefined) ? data.styles.choropleth.fieldOthersFill : fillColor
+        layer.setStyle({fillColor: fillColor});
+      });
+    };
+
+    if (action === "stroke") {
+      if ((geometryType === "Point") || (geometryType === "Polygon")) {
+        var color = data.styles.choropleth.stroke.color;
+        console.log(color);
+        _.each(layers[data.id].layer._layers,function(layer){
+          layer.setStyle({color: color});
+        });
+      };
+
+      if ((geometryType === "LineString") || (geometryType === "MultiLineString")) {
+        _.each(layers[data.id].layer._layers,function(layer){
+          var color = fieldFills[layer.feature.properties[data.styles.choropleth.field]];
+          color = (color === undefined) ? data.styles.choropleth.fieldOthersFill : color
+          layer.setStyle({color: color});
+        });
+      };
+    };
+
+  };
+
+  if (styleType === "simple") {
+    var style = undefined;
+    if (action === "fill") {style = {fillColor: data.styles.simple.fill.color}};
+    if (action === "stroke") {style = {color: data.styles.simple.stroke.color}};
+    layers[layerID].layer.setStyle(style);
+  };
+};
+
+updateGeojsonLayerStyle = function(layerID,value,action,attribute,layers) {
   $.ajax({url: "layer/find/" + layerID}).done(function(data){
-    if (data.styles.type === "simple") {
-      if (attribute === 'opacity') {
-        if (action === "fill") {data.styles.simple.fill.opacity = value};
-        if (action === "stroke") {data.styles.simple.stroke.opacity = value};
-      };
-      if (attribute === 'weight') {
-        data.styles.simple.stroke.weight = value;
-      };
-      if (attribute === 'radius') {
-        data.styles.simple.radius = value;
-      };
-    };
-    if (data.styles.type === "category") {
-      if (attribute === 'opacity') {
-        if (action === "fill") {data.styles.category.fill.opacity = value};
-        if (action === "stroke") {data.styles.category.stroke.opacity = value};
-      };
-      if (attribute === 'weight') {
-        data.styles.category.stroke.weight = value;
-      };
-      if (attribute === 'radius') {
-        data.styles.category.radius = value;
-      };
-    };
-    if (data.styles.type === "choropleth") {
-      if (attribute === 'opacity') {
-        if (action === "fill") {data.styles.choropleth.fill.opacity = value};
-        if (action === "stroke") {data.styles.choropleth.stroke.opacity = value};
-      };
-      if (attribute === 'weight') {
-        data.styles.choropleth.stroke.weight = value;
-      };
-      if (attribute === 'radius') {
-        data.styles.choropleth.radius = value;
-      };
-      data.styles.choropleth.fieldValues = [];
-    };
+    data = updateLayerStyleData(data);
     $.ajax({url: "layer/update/" + layerID, data: data}).done(function(data){
-      // console.log("Success");
-      console.log(data);
+      layers[layerID].layer.setStyle(style);
     });
   });
+};
+
+updateTileLayerStyle = function(layerID,value,action,attribute,layers) {
+  $.ajax({url: "layer/find/" + layerID}).done(function(data){
+    data = updateLayerStyleData(data,value,action,attribute);
+    $.ajax({url: "layer/update/" + layerID, data: data}).done(function(data){
+      replaceTileLayer(layers[data.id].layer);
+    });
+  });
+};
+
+updateLayerStyleData = function(data,value,action,attribute) {
+  if (data.styles.type === "simple") {
+    if (attribute === 'opacity') {
+      if (action === "fill") {data.styles.simple.fill.opacity = value};
+      if (action === "stroke") {data.styles.simple.stroke.opacity = value};
+    };
+    if (attribute === 'weight') {
+      data.styles.simple.stroke.weight = value;
+    };
+    if (attribute === 'radius') {
+      data.styles.simple.radius = value;
+    };
+  };
+  if (data.styles.type === "category") {
+    if (attribute === 'opacity') {
+      if (action === "fill") {data.styles.category.fill.opacity = value};
+      if (action === "stroke") {data.styles.category.stroke.opacity = value};
+    };
+    if (attribute === 'weight') {
+      data.styles.category.stroke.weight = value;
+    };
+    if (attribute === 'radius') {
+      data.styles.category.radius = value;
+    };
+  };
+  if (data.styles.type === "choropleth") {
+    if (attribute === 'opacity') {
+      if (action === "fill") {data.styles.choropleth.fill.opacity = value};
+      if (action === "stroke") {data.styles.choropleth.stroke.opacity = value};
+    };
+    if (attribute === 'weight') {
+      data.styles.choropleth.stroke.weight = value;
+    };
+    if (attribute === 'radius') {
+      data.styles.choropleth.radius = value;
+    };
+    data.styles.choropleth.fieldValues = [];
+  };
+  return data;
 };
 
 updateLayerVisibility = function(layerID,visibility) {
-  console.log("updateLayerVisibility");
   $.ajax({url: "layer/find/" + layerID}).done(function(data){
-    // console.log(data.visible);
     data.visible = visibility;
     $.ajax({url: "layer/update/" + layerID, data: data}).done(function(data){
-      // console.log("Success");
-      // console.log(data);
+
     });
   });
 };
@@ -589,6 +601,12 @@ updateLayerDrawOrder = function(sorted_ids,layers,map) {
       layers[id].zIndex = index;
     });
   });
+};
+
+replaceTileLayer = function (layer) {
+  map = layer._map;
+  map.removeLayer(layer);
+  map.addLayer(layer);
 };
 
 drawFrequencyChart = function(values,valBreaks,element) {
