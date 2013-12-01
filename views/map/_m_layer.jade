@@ -13,7 +13,7 @@ mixin layer(layer)
       span.glyphicon.glyphicon-th.pull-right.drag-handle(style="color: #999;")
     .panel-body(style="padding-top: 0px; padding-bottom: 0px;")
       .layer-style-type-dropdown-container(style="margin: 0px; padding-top: 5px; padding-right: 5px; width: 100%; position: relative; left: -5px;")
-        select.layer-style-dropdown.layer-style-type-dropdown(id="classification_#{layer.id}_#{layer.fcID}" style="width: 100%;")
+        select.layer-style-dropdown.layer-style-type-dropdown(id="type_#{layer.id}_#{layer.fcID}" style="width: 100%;")
           - var simple = layer.styles.type === "simple" ? true : false
           option(value="Simple_#{layer.id}_#{layer.fcID}" selected=simple)
             | Simple

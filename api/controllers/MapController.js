@@ -157,18 +157,22 @@ module.exports = {
       var style = layer.styles[style_type];
       var geometry_type = layer.geometryType;
 
-      // var tileLat = tileY2lat(req.params.y,req.params.z);
-      // var tileLon = tileX2lon(req.params.x,req.params.z);
-
+      var tileLat = tileY2lat(req.params.y,req.params.z);
+      var tileLon = tileX2lon(req.params.x,req.params.z);
+      // console.log(tileLon,tileLat,req.params.z);
+      // todo: convert backwards from lon,lat,zoom to higher zoom tile numbers.
+      // var zoom_level = (req.params.z > 17) ? 17 : req.params.z;
+      // todo: feature find bbox and map bbox;
       var bbox = mercator.xyz_to_envelope(parseInt(req.params.x),parseInt(req.params.y),parseInt(req.params.z), false);
+      
       var min = metersToLatLon(bbox[0],bbox[1]);
       var max = metersToLatLon(bbox[2],bbox[3]);
       var poly_bbox = [min[0],min[1],max[0],max[1]];
       var poly_coords = [[poly_bbox[1],poly_bbox[0]],[poly_bbox[1],poly_bbox[2]],[poly_bbox[3],poly_bbox[2]],[poly_bbox[3],poly_bbox[0]],[poly_bbox[1],poly_bbox[0]]];
       
       Feature.native(function (err,collection) {
-        // collection.find({"fcID": layer.fcID, geometry:{$geoIntersects:{$geometry:{type:"Polygon",coordinates: [ poly_coords ]}}}}).toArray(function(err, features) {
-        collection.find({"fcID": layer.fcID}).toArray(function(err, features) {
+        collection.find({"fcID": layer.fcID, geometry:{$geoIntersects:{$geometry:{type:"Polygon",coordinates: [ poly_coords ]}}}}).toArray(function(err, features) {
+        // collection.find({"fcID": layer.fcID}).toArray(function(err, features) {
           if (err) {
             console.log(err);
             return res.json({err: err});
@@ -185,23 +189,21 @@ module.exports = {
 
             var inline = headers.join(",") + ",geojson\n"
             _.each(features,function(feature){
-              // console.log(feature.xml);
               inline = inline + feature.xml;
             });
 
-            // filter-mode="all"
             xml_style = '<Style name="' + layerID + '" filter-mode="first">\n';
 
             if (style_type === "simple") {
 
               xml_style = xml_style + '<Rule>';
               
-              if (geometry_type === "LineString" || geometry_type === "Polygon") {
-                xml_style = xml_style + '<LineSymbolizer stroke-width="' + style.stroke.weight + '" stroke="' + style.stroke.color + '" stroke-opacity="' + style.stroke.opacity + '" />'
-              };
-
               if (geometry_type === "Point") {
                 xml_style = xml_style + '<MarkersSymbolizer fill="' + style.fill.color + '" opacity="' + style.fill.opacity + '" width="' + (style.radius * 2) + '" height="' + (style.radius * 2) + '" stroke="' + style.stroke.color + '" stroke-width="' + style.stroke.weight + '" stroke-opacity="' + style.stroke.opacity + '" placement="point" marker-type="ellipse" allow-overlap="true"/>'
+              };
+
+              if (geometry_type === "LineString" || geometry_type === "Polygon") {
+                xml_style = xml_style + '<LineSymbolizer stroke-linecap="round" stroke-linejoin="round" stroke-width="' + style.stroke.weight + '" stroke="' + style.stroke.color + '" stroke-opacity="' + style.stroke.opacity + '" />'
               };
 
               if (geometry_type === "Polygon") {
@@ -216,16 +218,23 @@ module.exports = {
               // Category Style Rules
               _.each(style.fieldValues,function(fieldValue,index){
                 xml_style = xml_style + '<Rule>\n';
-                // (!isNaN(parseFloat(fieldValue)) && isFinite(fieldValue))
                 if (_.isFinite(fieldValue)) {
                   xml_style = xml_style + '<Filter>[' + style.field + '] = ' + fieldValue + '</Filter>';
                 } else {
                   xml_style = xml_style + '<Filter>[' + style.field + '] = "' + fieldValue.replace(/"/g,'\\"') + '"</Filter>';
                 };
                 
-
                 if (geometry_type === "Point") {
                   xml_style = xml_style + '<MarkersSymbolizer fill="' + style.fieldFillColor[index] + '" opacity="' + style.fill.opacity + '" width="' + (style.radius * 2) + '" height="' + (style.radius * 2) + '" stroke="' + style.stroke.color + '" stroke-width="' + style.stroke.weight + '" stroke-opacity="' + style.stroke.opacity + '" placement="point" marker-type="ellipse" allow-overlap="true"/>\n'
+                };
+
+                if (geometry_type === "LineString") {
+                  xml_style = xml_style + '<LineSymbolizer stroke-linecap="round" stroke-linejoin="round" stroke-width="' + style.stroke.weight + '" stroke="' + style.fieldFillColor[index] + '" stroke-opacity="' + style.stroke.opacity + '" />'
+                };
+
+                if (geometry_type === "Polygon") {
+                  xml_style = xml_style + '<LineSymbolizer stroke-linecap="round" stroke-linejoin="round" stroke-width="' + style.stroke.weight + '" stroke="' + style.stroke.color + '" stroke-opacity="' + style.stroke.opacity + '" />'
+                  xml_style = xml_style + '<PolygonSymbolizer fill="' + style.fieldFillColor[index] + '" fill-opacity="' + style.fill.opacity + '" />'
                 };
 
                 xml_style = xml_style + "</Rule>\n";
@@ -236,11 +245,19 @@ module.exports = {
               if (geometry_type === "Point") {
                 xml_style = xml_style + '<MarkersSymbolizer fill="' + style.fieldOthersFill + '" opacity="' + style.fill.opacity + '" width="' + (style.radius * 2) + '" height="' + (style.radius * 2) + '" stroke="' + style.stroke.color + '" stroke-width="' + style.stroke.weight + '" stroke-opacity="' + style.stroke.opacity + '" placement="point" marker-type="ellipse" allow-overlap="true"/>\n'
               };
+              if (geometry_type === "LineString") {
+                xml_style = xml_style + '<LineSymbolizer stroke-linecap="round" stroke-linejoin="round" stroke-width="' + style.stroke.weight + '" stroke="' + style.fieldOthersFill + '" stroke-opacity="' + style.stroke.opacity + '" />'
+              };
+
+              if (geometry_type === "Polygon") {
+                xml_style = xml_style + '<LineSymbolizer stroke-linecap="round" stroke-linejoin="round" stroke-width="' + style.stroke.weight + '" stroke="' + style.stroke.color + '" stroke-opacity="' + style.stroke.opacity + '" />'
+                xml_style = xml_style + '<PolygonSymbolizer fill="' + style.fieldOthersFill + '" fill-opacity="' + style.fill.opacity + '" />'
+              };
               xml_style = xml_style + "</Rule>\n";
             };
 
             if (style_type === "choropleth") {
-              // Category Style Rules
+              // Choropleth Style Rules
               _.each(style.fieldBreaks,function(fieldBreak,index){
                 if (style.fieldBreaks[index + 1] !== undefined) {
                   xml_style = xml_style + '<Rule>\n';
@@ -249,6 +266,15 @@ module.exports = {
 
                   if (geometry_type === "Point") {
                     xml_style = xml_style + '<MarkersSymbolizer fill="' + style.fieldFillColor[index] + '" opacity="' + style.fill.opacity + '" width="' + (style.radius * 2) + '" height="' + (style.radius * 2) + '" stroke="' + style.stroke.color + '" stroke-width="' + style.stroke.weight + '" stroke-opacity="' + style.stroke.opacity + '" placement="point" marker-type="ellipse" allow-overlap="true"/>\n'
+                  };
+
+                  if (geometry_type === "LineString") {
+                    xml_style = xml_style + '<LineSymbolizer stroke-linecap="round" stroke-linejoin="round" stroke-width="' + style.stroke.weight + '" stroke="' + style.fieldFillColor[index] + '" stroke-opacity="' + style.stroke.opacity + '" />'
+                  };
+
+                  if (geometry_type === "Polygon") {
+                    xml_style = xml_style + '<LineSymbolizer stroke-linecap="round" stroke-linejoin="round" stroke-width="' + style.stroke.weight + '" stroke="' + style.stroke.color + '" stroke-opacity="' + style.stroke.opacity + '" />'
+                    xml_style = xml_style + '<PolygonSymbolizer fill="' + style.fieldFillColor[index] + '" fill-opacity="' + style.fill.opacity + '" />'
                   };
 
                   xml_style = xml_style + "</Rule>\n";
@@ -262,7 +288,6 @@ module.exports = {
             var headers = [];
           };
 
-          // console.log(xml_style);
           var xml_map_end = '</Map>';
           var xml = xml_map_start + xml_style + xml_map_end;
 
