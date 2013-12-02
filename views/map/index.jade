@@ -2,12 +2,29 @@ extends ../layout
 include _m_layer
 block content
   link(rel="stylesheet" href="http://cdn.leafletjs.com/leaflet-0.7/leaflet.css")
+  link(rel="stylesheet" href="/linker/styles/map.css")
   script(src="http://cdn.leafletjs.com/leaflet-0.7/leaflet.js")
   script(src='/js/leaflet.spin.js')
   script(src='/js/leaflet.utfgrid.js')
   script(src='/js/leaflet.utilities.js')
   script(src='/js/leaflet.tile.interaction.js')
-
+  #mapPopupModal.modal.fade(tabindex="-1" role="dialog" aria-labelledby="filterColumnModalLabel" aria-hidden="true")
+    .modal-dialog
+      .modal-content
+        .modal-header
+          button.close(type="button" data-dismiss="modal" aria-hidden="true") &times;
+          h4#filterColumnModalLabel.modal-title Filter Column 
+        .modal-body
+          | Stats Go Here
+          .rating-container
+            .star.glyphicon.glyphicon-star-empty
+            .star.glyphicon.glyphicon-star-empty
+            .star.glyphicon.glyphicon-star-empty
+            .star.glyphicon.glyphicon-star-empty
+            .star.glyphicon.glyphicon-star-empty
+        .modal-footer
+          button.btn.btn-default(type="button" data-dismiss="modal") Cancel
+          button.btn.btn-primary(type="button") Confirm
   #mapContainer
     .row
       .col-xs-3(style="padding-right: 0px;")
@@ -246,12 +263,9 @@ block content
       var layerID = $(e.currentTarget).attr("id").split("_")[1];
       var fcID = $(e.currentTarget).attr("id").split("_")[2];
       var style = $("#s2id_type_" + layerID + "_" + fcID + " .select2-chosen").html();
-      //- var field = $(".layer-style-field-dropdown .select2-chosen").html();
       var field = $("#s2id_field_" + layerID + "_" + fcID + " .select2-chosen").html();
-      //- var buckets = $(".layer-style-buckets-dropdown .select2-chosen").html()
       var buckets = $("#s2id_bucket_" + layerID + "_" + fcID + " .select2-chosen").html()
       if (buckets !== undefined) buckets = buckets.replace(" Buckets","");
-      //- var classification = $(".layer-style-classification-dropdown .select2-chosen").html();
       var classification = $("#s2id_classification_" + layerID + "_" + fcID + " .select2-chosen").html();
       data = {
           type: style

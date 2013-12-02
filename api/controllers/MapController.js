@@ -99,52 +99,6 @@ module.exports = {
     });
   },
 
-  mapnik: function(req,res) {
-    var mapnik = require('mapnik');
-    // var carto = require('carto');
-
-    // var carto_style = "#sewer[PipeSize=8] {line-width:1;line-color:#168;}#sewer[PipeSize=10] {line-width:1;line-color:#CCC;}"
-
-    // var renderer = new carto.Renderer();
-
-    // renderer.renderMSS(carto_style,function(err,output){
-    //   console.log("Renderer Error:");
-    //   console.log(err);
-    //   console.log("Renderer Output:");
-    //   console.log(output);
-    // });
-
-    var inline = "geojson\n"
-    Feature.find().where({"fcID": "528877d8bfae560000000001"}).done(function(err,features){
-      // features = features.slice(0,19);
-      _.each(features,function(feature){
-        inline = inline + "'" + JSON.stringify(feature.geometry) + "'\n"
-      });
-
-      var xml = '<Map background-color="#00000000"><Style name="style" filter-mode="first"><Rule><LineSymbolizer stroke-width="1" stroke="#116688" /></Rule></Style></Map>';
-
-      var map = new mapnik.Map(256, 256);
-      map.fromStringSync(xml);
-      map.bufferSize = 64;
-
-      var ds = new mapnik.Datasource({type: 'csv', 'inline': inline});
-      var layer = new mapnik.Layer('sewer');
-      layer.datasource = ds;
-      layer.styles=["style"];
-      map.add_layer(layer);
-      map.zoomAll();
-      var im = new mapnik.Image(map.width, map.height);
-      map.render(im, function(err, im) {
-        if (err) {
-          throw err;
-        } else {
-          res.writeHead(200, {'Content-Type': 'image/png'});
-          res.end(im.encodeSync('png'));
-        }
-      });
-    });
-  },
-
   tiles: function(req,res) {
     var grid_requested = req.url.match(".grid.json") ? true : false;
     var req_callback = req.query.callback;

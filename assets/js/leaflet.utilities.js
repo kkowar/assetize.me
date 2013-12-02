@@ -9,10 +9,15 @@ generateLeafletBaseMap = function () {
   var osm = new L.TileLayer(osmUrl, {minZoom: 8, maxZoom: 20, attribution: osmAttrib}); 
   map.setView(new L.LatLng(39.97407, -105.14901),14);
   map.addLayer(osm);
+  initMapPopup(map);
+  return map;
+};
+
+initMapPopup = function (map) {
   map.on('click', function(e){
     var data = getUtfGridData(e);
-    console.log(data);
-    var html = generateMultiplePopupHTML(data);
+    // console.log(data);
+    var html = generateMultiplePopupHTML(data,e.latlng);
     if (data.length !== 0) {
       var popup = L.popup();
       popup
@@ -20,9 +25,24 @@ generateLeafletBaseMap = function () {
         .setContent(html)
         .openOn(map);
     };
+    $(".mapPopupModal").on("click",function(e){
+      var properties = JSON.parse(e.currentTarget.children[0].children[1].value);
+      var html = "<div><dl>";
+      _.each(properties, function (value,key) {
+        html = html + "<dt>" + key + "</dt><dd>" + value + "</dd>";
+      });
+      html = html + "</dl></div>";
+      // $('#mapPopupModal .modal-body').html(html);
+      $('#mapPopupModal').modal({show: true});
+      $('.rating-container .star').on("click",function () {
+          // console.log("Clicked Star");
+          $('.rating-container .star').removeClass('glyphicon-star');
+          $('.rating-container .star').addClass('glyphicon-star-empty');
+          $(this).prevAll('.star').addBack().removeClass('glyphicon-star-empty').addClass('glyphicon-star');
+      });
+    });
   });
-  return map;
-};
+}
 
 getUtfGridData = function (e) {
   var map = gMap,
@@ -374,7 +394,12 @@ generatePopupHTML = function(properties) {
   return html;
 };
 
-generateMultiplePopupHTML = function(utf_hits) {
+generateMultiplePopupHTML = function(utf_hits,latlng) {
+  // return getBasicHTML(utf_hits);
+  return getAdvancedHTML(utf_hits,latlng);
+};
+
+getBasicHTML = function(utf_hits) {
   var html = "<div class='popup-content-wrapper'><dl>";
   _.each(utf_hits,function(hit){
     html = html + "<div style='background-color: #CCC'>utf hit</div>";
@@ -387,6 +412,38 @@ generateMultiplePopupHTML = function(utf_hits) {
   });
   html = html + "</dl></div>";
   html = html + "<div class='popup-content-footer pull-right'><span class='glyphicon glyphicon-edit' title='Edit'></span>&nbsp;<span class='glyphicon glyphicon-remove' title='Delete'></span></div>";
+  return html;
+};
+
+getAdvancedHTML = function(utf_hits,latlng) {
+
+  var html = "<div class='popup-content-wrapper'>";
+  // Bootstrap Well Style
+  // var html = '';
+  // _.each(utf_hits,function(hit,index){
+  //   html += '<div class="well well-sm">Hit #' + index + '</div>';
+  // });
+
+  // Bootstrap List Group Style
+  // var html = '<ul class="list-group">';
+  // _.each(utf_hits,function(hit,index){
+  //   // html += '<div class="well well-sm">Hit #' + index + '</div>';
+  //   html += '<li class="list-group-item">Hit #' + index + '</li>';
+  // });
+  // html += '</ul>';
+
+  // Bootstrap Nav Stacked
+  html += '<ul class="nav nav-pills nav-stacked">';
+  _.each(utf_hits,function(hit,index){
+    // html += '<div class="well well-sm">Hit #' + index + '</div>';
+    html += '<li class=""><a class="mapPopupModal" href="#"><div class="text-left">Hit #' + index + '<span class="glyphicon glyphicon-chevron-right pull-right"></span><input type="hidden" value="' + JSON.stringify(hit).replace(/"/g,'&#34;') + '"></div></a></li>';
+  });
+  html += '</ul>';
+  html += "</div>";
+  html += "<div class='popup-content-footer'>";
+  html += "<span class='text-muted'><div>Longitude</div><div>" + latlng.lng.toFixed(8) + "</div><div>Latitude</div><div>" + latlng.lat.toFixed(8) + "</div></span>"
+  html += "</div";
+  // console.log(latlng);
   return html;
 };
 
