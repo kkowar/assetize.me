@@ -74,7 +74,7 @@
 			.nav-stacked li {
 
 				border-bottom: 1px solid #CCC;
-				border-left: 5px solid green;
+				// border-left: 5px solid green;
 				margin: 0px;
 
 				.active {
@@ -137,6 +137,14 @@
 		font-size: 40px;
 		color: gold;
 	}
+}
+
+@media print
+{    
+    .no-print, .no-print *
+    {
+        display: none !important;
+    }
 }
 
 // .leaflet-popup-close-button {

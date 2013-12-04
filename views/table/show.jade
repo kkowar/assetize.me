@@ -273,7 +273,7 @@ block content
 
     var showRenameModal = function (fieldIndex,fcID) {
       //- console.log([fieldIndex,fcID]);
-      var jSelector = $("#dropdown_menu_" + fcID + "_" + fieldIndex);
+      var jSelector = $("#dropdown_menu_" + fcID + "_" + fieldIndex + " div");
       var fieldName = jSelector.html().split("&nbsp;")[0];
       $("#renameColumnModalLabel").html("Rename column <strong>\"" + fieldName + "\"</strong>");
       $("#renameColumnModal input#rename_fieldIndex").val(fieldIndex);

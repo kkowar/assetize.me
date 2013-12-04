@@ -3,31 +3,38 @@ include _m_layer
 block content
   link(rel="stylesheet" href="http://cdn.leafletjs.com/leaflet-0.7/leaflet.css")
   link(rel="stylesheet" href="/linker/styles/map.css")
+  link(rel="stylesheet" href="/linker/styles/L.Control.Locate.css")
   script(src="http://cdn.leafletjs.com/leaflet-0.7/leaflet.js")
   script(src='/js/leaflet.spin.js')
   script(src='/js/leaflet.utfgrid.js')
   script(src='/js/leaflet.utilities.js')
   script(src='/js/leaflet.tile.interaction.js')
+  script(src='/js/L.Control.Locate.js')
   #mapPopupModal.modal.fade(tabindex="-1" role="dialog" aria-labelledby="filterColumnModalLabel" aria-hidden="true")
     .modal-dialog
       .modal-content
         .modal-header
           button.close(type="button" data-dismiss="modal" aria-hidden="true") &times;
-          h4#filterColumnModalLabel.modal-title Filter Column 
+          h4#filterColumnModalLabel.modal-title Asset Information
         .modal-body
-          | Stats Go Here
-          .rating-container
-            .star.glyphicon.glyphicon-star-empty
-            .star.glyphicon.glyphicon-star-empty
-            .star.glyphicon.glyphicon-star-empty
-            .star.glyphicon.glyphicon-star-empty
-            .star.glyphicon.glyphicon-star-empty
+          span.pull-left
+            img(data-src="holder.js/100%x180" alt="..." src="/images/img-rounded.png")
+          span.pull-left(style="padding-left: 20px;")
+            h4 Asset Condition
+            .rating-container
+              .star.glyphicon.glyphicon-star-empty
+              .star.glyphicon.glyphicon-star-empty
+              .star.glyphicon.glyphicon-star-empty
+              .star.glyphicon.glyphicon-star-empty
+              .star.glyphicon.glyphicon-star-empty
+          .clearfix
+          .data
         .modal-footer
           button.btn.btn-default(type="button" data-dismiss="modal") Cancel
           button.btn.btn-primary(type="button") Confirm
   #mapContainer
     .row
-      .col-xs-3(style="padding-right: 0px;")
+      .col-xs-3.no-print(style="padding-right: 0px;")
         #map_sidebar(style="background-color:; height: 100px;") 
           #assetFilterMenu(style="background-color: ; padding: 5px; padding-left: 10px;")
             select#assetFilterMenuSelect(style="width: 74%;")

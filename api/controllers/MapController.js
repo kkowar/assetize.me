@@ -232,6 +232,7 @@ module.exports = {
                     xml_style = xml_style + '<PolygonSymbolizer fill="' + style.fieldFillColor[index] + '" fill-opacity="' + style.fill.opacity + '" />'
                   };
 
+                  xml_style = xml_style + '<TextSymbolizer face-name="DejaVu Sans Book" size="14" fill="black" halo-fill= "white" halo-radius="2" placement="line" allow-overlap="false">[' + style.field + ']</TextSymbolizer>'
                   xml_style = xml_style + "</Rule>\n";
                 };
               });

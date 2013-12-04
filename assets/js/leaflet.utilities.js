@@ -10,6 +10,33 @@ generateLeafletBaseMap = function () {
   map.setView(new L.LatLng(39.97407, -105.14901),14);
   map.addLayer(osm);
   initMapPopup(map);
+  L.control.locate().addTo(map);
+  // var info = L.control();
+  // info.onAdd = function (map) {
+  //     this._div = L.DomUtil.create('div', 'info'); // create a div with a class "info"
+  //     this.update();
+  //     return this._div;
+  // };
+  // // method that we will use to update the control based on feature properties passed
+  // info.update = function (props) {
+  //     this._div.innerHTML = '<div id="geoLocate" class="glyphicon glyphicon-screenshot" style="background-color: #ffffff; border-radius: 3px; font-size: 20px; padding: 2px 5px 5px 5px;"></div>';
+  // };
+  // info.addTo(map);
+  // $("#geoLocate").on("click",function(e){
+  //   map.locate({setView: true, maxZoom: 16});
+  // });
+
+  // function onLocationFound(e) {
+  //   var radius = e.accuracy / 2;
+
+  //   L.marker(e.latlng).addTo(map)
+  //       .bindPopup("You are within " + radius + " meters from this point").openPopup();
+
+  //   L.circle(e.latlng, radius).addTo(map);
+  // }
+
+  // map.on('locationfound', onLocationFound);
+
   return map;
 };
 
@@ -27,12 +54,12 @@ initMapPopup = function (map) {
     };
     $(".mapPopupModal").on("click",function(e){
       var properties = JSON.parse(e.currentTarget.children[0].children[1].value);
-      var html = "<div><dl>";
+      var html = "<div><dl class='dl-horizontal'>";
       _.each(properties, function (value,key) {
         html = html + "<dt>" + key + "</dt><dd>" + value + "</dd>";
       });
       html = html + "</dl></div>";
-      // $('#mapPopupModal .modal-body').html(html);
+      $('#mapPopupModal .modal-body .data').html(html);
       $('#mapPopupModal').modal({show: true});
       $('.rating-container .star').on("click",function () {
           // console.log("Clicked Star");

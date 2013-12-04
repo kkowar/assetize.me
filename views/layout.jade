@@ -6,6 +6,7 @@ html
     meta(name='viewport', content='width=device-width, initial-scale=1, maximum-scale=1')
           
     // STYLES
+    link(rel="stylesheet", href="/linker/styles/L.Control.Locate.css")
     link(rel="stylesheet", href="/linker/styles/bootstrap.css")
     link(rel="stylesheet", href="/linker/styles/dashboard.css")
     link(rel="stylesheet", href="/linker/styles/join.css")
@@ -37,7 +38,7 @@ html
     // SCRIPTS END
 
   body
-    .navbar.navbar-default.navbar-fixed-top.navbar-inverse
+    .navbar.navbar-default.navbar-fixed-top.navbar-inverse.no-print
       .container
         .navbar-header
           img.navbar-brand(src='/images/logo_words.png', style='height: 50px; position: relative; top: -2px;')
@@ -63,12 +64,6 @@ html
               li
                 a#navJoin(href="/table/stats")
                   | Stats
-        //- - if (req.target.controller == 'table')
-        //-   ul.nav.navbar-nav.pull-right
-        //-     li(style="margin-top: 10px;")
-        //-       span.input-group.input-group-sm(style="width: 250px;")
-        //-         input#searchColumnInput.form-control(type="text" value="" placeholder="Search...")
-        //-         span.input-group-btn
-        //-           button#searchColumnButton.btn.btn-success Search
+
 
     block content
