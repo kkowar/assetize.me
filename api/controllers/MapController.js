@@ -100,6 +100,7 @@ module.exports = {
   },
 
   tiles: function(req,res) {
+    console.log(req.url);
     var grid_requested = req.url.match(".grid.json") ? true : false;
     var req_callback = req.query.callback;
     var layerID = req.params.layerID;

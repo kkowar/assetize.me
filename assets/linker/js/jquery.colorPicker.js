@@ -235,10 +235,23 @@
         showPalette : function (palette) {
             var hexColor = selectorOwner.prev("input").val();
 
+            var viewWidth = (window.innerWidth || document.documentElement.clientWidth || document.body.clientWidth) + $(document).scrollLeft();
+            var viewHeight = (window.innerHeight || document.documentElement.clientHeight || document.body.clientHeight) + $(document).scrollTop();
+            var top = selectorOwner.offset().top + (selectorOwner.outerHeight()) + 10;
+            var left = selectorOwner.offset().left + 35;
+            var width = parseInt($(".colorPicker-palette").css("width").replace("px",""));
+            var height = parseInt($(".colorPicker-palette").css("height").replace("px",""));
+            top -= (top + height > viewHeight && viewHeight > height) ? Math.abs(top + height + 20 - viewHeight) : 0;
+
             palette.css({
-                top: selectorOwner.offset().top + (selectorOwner.outerHeight()) + 10,
-                left: selectorOwner.offset().left - 10
+                top: top,
+                left: left
             });
+
+            // palette.css({
+            //     top: selectorOwner.offset().top + (selectorOwner.outerHeight()) + 10,
+            //     left: selectorOwner.offset().left - 10
+            // });
 
             $("#color_value").val(hexColor);
 

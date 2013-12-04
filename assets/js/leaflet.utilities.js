@@ -132,12 +132,12 @@ getTiles = function(layer,layers,map) {
     if (map.hasLayer(layers[layer.id].layer)) map.removeLayer(layers[layer.id].layer);
   };
 
-  var tileUrl = 'http://localhost:1337/map/tiles/' + layer.id + '/{z}/{x}/{y}.png'
+  var tileUrl = '/map/tiles/' + layer.id + '/{z}/{x}/{y}.png'
   var tileLayer = new L.TileLayer(tileUrl);
   gMap.addLayer(tileLayer);
   layers[layer.id].layer = tileLayer;
 
-  var utfGridUrl = 'http://localhost:1337/map/tiles/' + layer.id + '/{z}/{x}/{y}.grid.json?callback={cb}'
+  var utfGridUrl = '/map/tiles/' + layer.id + '/{z}/{x}/{y}.grid.json?callback={cb}'
   var utfGridLayer = new L.UtfGrid(utfGridUrl, {resolution: 2});
   gMap.addLayer(utfGridLayer);
   layers[layer.id].layerGrid = utfGridLayer;
