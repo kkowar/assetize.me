@@ -172,7 +172,8 @@ L.Control.Locate = L.Control.extend({
                 if (isOutsideMapBounds()) {
                     self.options.onLocationOutsideMapBounds(self);
                 } else {
-                    map.fitBounds(self._event.bounds, { padding: self.options.circlePadding });
+                    // map.fitBounds(self._event.bounds, { padding: self.options.circlePadding });
+                    map.setView(self._event.latlng);
                 }
                 self._locateOnNextLocationFound = false;
             }

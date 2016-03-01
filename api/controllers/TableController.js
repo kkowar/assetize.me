@@ -33,8 +33,8 @@ module.exports = {
         if (!arrF) return next();
         var th = _.map(arrF[0].properties,function(value,key){return key;});
         var thTypes = _.map(foundFC.properties,function(prop){return prop.type;});
-        console.log(foundFC);
-        console.log(thTypes);
+        // console.log(foundFC);
+        // console.log(thTypes);
         th.unshift("fID");
         res.view({layerTableHeaders: th, thTypes: thTypes, layerTableRows: arrF, fcID: fcID, currentView: req.url});
       });

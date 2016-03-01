@@ -62,8 +62,11 @@ html
                   | Join
               - var active = ((req.target.controller === 'table') && (req.target.action === 'stats')) ? "active" : ""
               li
-                a#navJoin(href="/table/stats")
+                a#navStats(href="/table/stats")
                   | Stats
+              li
+                a#navActivity(href="/activity")
+                  | Activity
 
 
     block content

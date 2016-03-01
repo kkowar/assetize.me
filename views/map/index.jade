@@ -216,6 +216,7 @@ block content
             inputVal = (inputVal === 0) ? 0 : (inputVal - step);
           };
           fixedInputVal = inputVal.toFixed(1); 
+          fixedInputVal = inputVal;
           input.val(fixedInputVal);
           style = undefined;
           if (attribute === 'opacity') {

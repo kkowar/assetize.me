@@ -2,9 +2,9 @@ generateLeafletBaseMap = function () {
   L.Icon.Default.imagePath = 'packages/leaflet/images';
   var map = new L.Map('map');
   // Mapquest Aerial
-  // var osmUrl = "http://otile1.mqcdn.com/tiles/1.0.0/sat/{z}/{x}/{y}.jpg"
+  var osmUrl = "http://otile1.mqcdn.com/tiles/1.0.0/sat/{z}/{x}/{y}.jpg"
   // Cloudmade Grayscale
-  var osmUrl = 'http://{s}.tile.cloudmade.com/16ec923ebe48421e9ae5573d3016d5c0/22677/256/{z}/{x}/{y}.png'
+  // var osmUrl = 'http://{s}.tile.cloudmade.com/91e9a402338a459ea47a305f917d85d0/256/{z}/{x}/{y}.png'
   var osmAttrib='Map data © OpenStreetMap contributors';
   var osm = new L.TileLayer(osmUrl, {minZoom: 8, maxZoom: 20, attribution: osmAttrib}); 
   map.setView(new L.LatLng(39.97407, -105.14901),14);
