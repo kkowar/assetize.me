@@ -26,10 +26,10 @@ module.exports = {
     var fcID = req.query.fcID;
   	var layerID = req.query.layerID;
     console.log([type,field,buckets,classification,fcID,layerID]);
-    FeatureCollection.findOne({"id": fcID}).done(function(err,foundFC) {
+    FeatureCollection.findOne({"id": fcID}).exec(function(err,foundFC) {
       if (err) return res.json({error: err});
       if (!foundFC) return res.json({foundFC: foundFC});
-      Layer.findOne({"id": layerID}).done(function(err,foundLayer){
+      Layer.findOne({"id": layerID}).exec(function(err,foundLayer){
         if (err) return res.json({error: err});
         if (!foundLayer) return res.json({foundLayer: foundLayer});
         var geometryType = foundFC.geometryType;
@@ -45,7 +45,7 @@ module.exports = {
           });
         };
         if (type === "Category") {
-          Feature.find({"fcID": fcID}).done(function(err,foundFeatures){
+          Feature.find({"fcID": fcID}).exec(function(err,foundFeatures){
             if (err) return res.json({error: err});
             if (!foundFeatures) return res.json({foundFeatures: foundFeatures});
             foundLayer.styles.type = "category";
@@ -94,7 +94,7 @@ module.exports = {
           });
         };
         if (type === "Choropleth") {
-          Feature.find({"fcID": fcID}).done(function(err,foundFeatures){
+          Feature.find({"fcID": fcID}).exec(function(err,foundFeatures){
             if (err) return res.json({error: err});
             if (!foundFeatures) return res.json({foundFeatures: foundFeatures});
             foundLayer.styles.type = "choropleth";

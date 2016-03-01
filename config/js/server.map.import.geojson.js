@@ -137,7 +137,7 @@ createFeature = function (feature,fcID,index) {
     geometry: feature.geometry,
     xml: createFeatureXML(feature)
   };
-  Feature.create(f).done(function (err,createdFeature) {
+  Feature.create(f).exec(function (err,createdFeature) {
     if (err) return console.log(err);
     createdFeature.save(function (err,savedFeature) {
       if (err) return console.log(err);

@@ -2,8 +2,9 @@ extends ../layout
 include _m_layer
 block content
   link(rel="stylesheet" href="http://cdn.leafletjs.com/leaflet-0.7/leaflet.css")
-  link(rel="stylesheet" href="/linker/styles/map.css")
-  link(rel="stylesheet" href="/linker/styles/L.Control.Locate.css")
+  link(rel="stylesheet" href="/styles/map.css")
+  link(rel="stylesheet" href="/styles/map_forms.css")
+  link(rel="stylesheet" href="/styles/L.Control.Locate.css")
   script(src="http://cdn.leafletjs.com/leaflet-0.7/leaflet.js")
   script(src='/js/leaflet.spin.js')
   script(src='/js/leaflet.utfgrid.js')
@@ -69,8 +70,19 @@ block content
       setupLayerStyleDialogs();
 
       initLeafletMap();
+
+      loadStyleSheet("/styles/map_forms.css");
       
     });
+
+    var loadStyleSheet = function(src) {
+        if (document.createStyleSheet){
+            document.createStyleSheet(src);
+        }
+        else {
+            $("head").append($("<link rel='stylesheet' href='"+src+"' type='text/css' media='screen' />"));
+        }
+    };
     
     var setScreenElementDimensions = function () {
       var height = window.innerHeight - 50

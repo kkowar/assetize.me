@@ -18,7 +18,7 @@
 module.exports = {
 
   join: function(req,res) {
-    FeatureCollection.find().done(function(err,arrFC){
+    FeatureCollection.find().exec(function(err,arrFC){
       if (err) return next(err);
       if (!arrFC) return next();
       res.view({arrFC: arrFC});
@@ -31,14 +31,14 @@ module.exports = {
     var targetB = req.param("targetB");
     var mergeTableName = req.param("mergeTableName");
     // , where: {"properties."}
-    Feature.find({"fcID": targetA.fcID}).done(function(err,arrFa){
+    Feature.find({"fcID": targetA.fcID}).exec(function(err,arrFa){
       if (err) return next(err);
       if (!arrFa) return next();
       var targetACount = arrFa.length;
       // var values = _.uniq(_.map(arrFa,function (fA) {return fA["properties"][targetA.propName]}));
       // var selector = '"properties.' + targetA.propName + '": $in: ' + JSON.stringify(values);
       // console.log(selector);
-      Feature.find({"fcID": targetB.fcID}).done(function(err,arrFb){
+      Feature.find({"fcID": targetB.fcID}).exec(function(err,arrFb){
         if (err) return next(err);
         if (!arrFb) return next();
         var targetBCount = arrFb.length;

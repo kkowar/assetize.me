@@ -18,10 +18,10 @@
 module.exports = {
     
   index: function(req, res) {
-    FeatureCollection.find().done(function(err,arrFC){
+    FeatureCollection.find().exec(function(err,arrFC){
       if (err) return next(err);
       if (!arrFC) return next();
-      Layer.find().done(function(err,layers){
+      Layer.find().exec(function(err,layers){
         if (err) return console.log(err);
         if (!layers) return console.log("No Layers Exist");
         var layerFCIDs = _.pluck(layers,"fcID");
@@ -53,11 +53,11 @@ module.exports = {
   
   layer: function(req,res) {
     var fcID = req.param("fcID");
-    FeatureCollection.findOne({"id": fcID}).limit(1).done(function(err,fc){
+    FeatureCollection.findOne({"id": fcID}).limit(1).exec(function(err,fc){
       if (err) return console.log(err);
       if (!fc) return;
       // todo: better error handling.
-      Layer.find().done(function(err,layers){
+      Layer.find().exec(function(err,layers){
         if (err) return next(err);
         var maxLayer = undefined;
         var maxZIndex = undefined;
@@ -84,14 +84,15 @@ module.exports = {
           'totalFeatures': fc.totalFeatures,
           'zIndex': maxZIndex,
         };
-        Layer.create(layer).done(function(err,createdLayer){
+        Layer.create(layer).exec(function(err,createdLayer){
           if (err) return console.log(err);
           if (!createdLayer) return;
-          createdLayer.save(function(err,savedLayer){
+          createdLayer.save(function(err){
             if (err) return console.log(err);
             if (!createdLayer) return;
             // todo: better error handling.
-            res.view('map/_layer', {layer: savedLayer, layout: null});
+            console.log(createdLayer)
+            res.view('map/_layer', {layer: createdLayer, layout: null});
           });
         });
         
@@ -104,22 +105,98 @@ module.exports = {
     var grid_requested = req.url.match(".grid.json") ? true : false;
     var req_callback = req.query.callback;
     var layerID = req.params.layerID;
-    // var mapnik = require('mapnik');
-    // var mercator = require('../../config/js/sphericalmercator.js');
-    Layer.findOne().where({"id": layerID}).done(function(err,layer){
+    var mapnik = require('mapnik');
+    mapnik.register_default_fonts();
+    mapnik.register_default_input_plugins();
+    var proj4 = '+proj=merc +a=6378137 +b=6378137 +lat_ts=0.0 +lon_0=0.0 +x_0=0.0 +y_0=0 +k=1.0 +units=m +nadgrids=@null +wktext +no_defs +over';
+    var mercator = new mapnik.Projection(proj4);
+
+    var TMS_SCHEME = false;
+    var const_size = 256;
+    var Bc = [];
+    var Cc = [];
+    var zc = [];
+    var Ac = [];
+    var DEG_TO_RAD = Math.PI / 180;
+    var RAD_TO_DEG = 180 / Math.PI;
+    var size = 256;
+    var levels = 18;
+    for (var d = 0; d < levels; d++) {
+      Bc.push(const_size / 360);
+      Cc.push(const_size / (2 * Math.PI));
+      zc.push(const_size / 2);
+      Ac.push(const_size);
+      const_size *= 2;
+    };
+    // console.log(Bc);
+    // console.log(Cc);
+    // console.log(zc);
+    // console.log(Ac);
+    // console.log(const_size);
+    var x = parseInt(req.params.x);
+    var y = parseInt(req.params.y)
+    var zoom = parseInt(req.params.z)
+    if (TMS_SCHEME) {
+      y = (Math.pow(2, zoom) - 1) - y;
+    }
+    var ll = [x * size, (y + 1) * size];
+    // console.log("ll: ");
+    // console.log(ll);
+    var ur = [(x + 1) * size, y * size];
+    // console.log("ur: ");
+    // console.log(ur);
+
+    var zoom_denom = zc[zoom];
+    // console.log(zoom_denom);
+    var g = (ll[1] - zoom_denom) / (-Cc[zoom]);
+    // console.log(g);
+    var lat = (ll[0] - zoom_denom) / Bc[zoom];
+    // console.log(lat);
+    var lon = RAD_TO_DEG * (2 * Math.atan(Math.exp(g)) - 0.5 * Math.PI);
+    // console.log(lon);
+    var bbox1 = [lat, lon];
+    // console.log(bbox1);
+
+    var zoom_denom = zc[zoom];
+    // console.log(zoom_denom);
+    var g = (ur[1] - zoom_denom) / (-Cc[zoom]);
+    // console.log(g);
+    var lat = (ur[0] - zoom_denom) / Bc[zoom];
+    // console.log(lat);
+    var lon = RAD_TO_DEG * (2 * Math.atan(Math.exp(g)) - 0.5 * Math.PI);
+    // console.log(lon);
+    var bbox2 = [lat, lon];
+    // console.log(bbox2);
+
+    var bbox = bbox1.concat(bbox2);
+    // console.log(bbox);
+    bbox = mercator.forward(bbox);
+    // console.log(bbox);
+
+    Layer.findOne().where({"id": layerID}).exec(function(err,layer){
 
       var style_type = layer.styles.type;
       var style = layer.styles[style_type];
       var geometry_type = layer.geometryType;
 
-      var tileLat = tileY2lat(req.params.y,req.params.z);
-      var tileLon = tileX2lon(req.params.x,req.params.z);
+
+      // var tileLat = tileY2lat(req.params.y,req.params.z);
+      // var tileLon = tileX2lon(req.params.x,req.params.z);
       // console.log(tileLon,tileLat,req.params.z);
       // todo: convert backwards from lon,lat,zoom to higher zoom tile numbers.
       // var zoom_level = (req.params.z > 17) ? 17 : req.params.z;
       // todo: feature find bbox and map bbox;
-      var bbox = mercator.xyz_to_envelope(parseInt(req.params.x),parseInt(req.params.y),parseInt(req.params.z), false);
-      
+
+      // var bbox = mercator.xyz_to_envelope(parseInt(req.params.x),parseInt(req.params.y),parseInt(req.params.z), false);
+
+      // console.log("bbox info ######################################################");
+      // console.log("req.params: ")
+      // console.log(req.params);
+      // var bbox = merc_translator.xyz_to_envelope(parseInt(req.params.x),parseInt(req.params.y),parseInt(req.params.z), false);
+      // var bbox = tileToBBOX(parseInt(req.params.x),parseInt(req.params.y),parseInt(req.params.z));
+      // console.log("Returned bbox: ");
+      // console.log(bbox);
+
       var min = metersToLatLon(bbox[0],bbox[1]);
       var max = metersToLatLon(bbox[2],bbox[3]);
       var poly_bbox = [min[0],min[1],max[0],max[1]];
@@ -130,7 +207,10 @@ module.exports = {
         // collection.find({"fcID": layer.fcID}).toArray(function(err, features) {
           if (err) {
             console.log(err);
-            return res.json({err: err});
+            // return res.json({err: err});
+          };
+          if (features == undefined) {
+            features = [];
           };
           // todo: consider maximum-extent property
           // '-20037508.34, -20037508.34, 20037508.34, 20037508.34' by setting it as a property of the mapnik.Map object.
@@ -276,7 +356,8 @@ module.exports = {
                   throw err;
                 } else {
                   res.writeHead(200, {'Content-Type': 'application/json; charset=utf-8'});
-                  var encodedUtfGrid = utfGrid.encodeSync('utf', {resolution: 2});
+                  // var encodedUtfGrid = utfGrid.encodeSync('utf', {resolution: 2});
+                  var encodedUtfGrid = utfGrid.encodeSync({resolution: 2});
                   res.end(req_callback  + "(" + JSON.stringify(encodedUtfGrid) + ")");
                 };
               });

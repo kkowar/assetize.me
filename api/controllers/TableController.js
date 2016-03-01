@@ -19,7 +19,7 @@ module.exports = {
     
   show: function(req,res) {
     var id = req.params.id;
-    FeatureCollection.findOne({"id": id}).limit(1).done(function(err,foundFC){
+    FeatureCollection.findOne({"id": id}).limit(1).exec(function(err,foundFC){
       if (err) return next(err);
       if (!foundFC) {
         res.view({layerTableHeaders: [], layerTableRows: [], fcID: "", currentView: req.url});
@@ -28,7 +28,7 @@ module.exports = {
       var fcID = foundFC.id;
       // todo: filter
       // , "properties.TypeAbbr": "PVC"
-      Feature.find({"fcID": fcID}).limit(50).done(function(err,arrF){
+      Feature.find({"fcID": fcID}).limit(50).exec(function(err,arrF){
         if (err) return next(err);
         if (!arrF) return next();
         var th = _.map(arrF[0].properties,function(value,key){return key;});
@@ -54,7 +54,7 @@ module.exports = {
       // array of the FeatureColleciton.
       var propIndex = value - 1;
 
-      FeatureCollection.findOne({"id": fcID}).done(function(err,foundFC){
+      FeatureCollection.findOne({"id": fcID}).exec(function(err,foundFC){
         if (err) return console.log(err);
         if (!foundFC) return console.log(foundFC);
         var property = foundFC.properties[propIndex]
@@ -62,7 +62,7 @@ module.exports = {
         foundFC.save(function(err,savedFC) {
           if (err) return console.log(err);
           if (!savedFC) return console.log(savedFC);
-          Feature.find({"fcID": fcID}).done(function(err,foundFeatures) {
+          Feature.find({"fcID": fcID}).exec(function(err,foundFeatures) {
             if (err) return console.log(err);
             if (foundFeatures.length === 0) return console.log(foundFeatures);
             _.each(foundFeatures,function(feature) {
@@ -90,13 +90,13 @@ module.exports = {
     // account for this when accessing the properties
     // array of the FeatureColleciton.
     var propIndex = fieldIndex - 1;
-    FeatureCollection.findOne({"id": fcID}).done(function(err,foundFC){
+    FeatureCollection.findOne({"id": fcID}).exec(function(err,foundFC){
       var property = foundFC.properties[propIndex];
       var fieldName = property.name;
       var fieldType = property.type;
       foundFC.properties[propIndex] = {name: newFieldName, type: fieldType};
       foundFC.save(function(err,savedFC) {
-        Feature.find({"fcID": fcID}).done(function(err,foundFeatures) {
+        Feature.find({"fcID": fcID}).exec(function(err,foundFeatures) {
           _.each(foundFeatures,function(feature) {
             feature.properties = _.pairs(feature.properties);
             feature.properties[propIndex][0] = newFieldName;
@@ -123,7 +123,7 @@ module.exports = {
   //   var fieldName = req.query.filterFieldName;
   //   var selector = JSON.parse('{"properties.' + fieldName + '": "'+ query + '"}');
   //   console.log(selector);
-  //   Feature.find().where({"fcID": fcID}).where(selector).done(function(err,foundFeatures){
+  //   Feature.find().where({"fcID": fcID}).where(selector).exec(function(err,foundFeatures){
   //     console.log(_.first(foundFeatures).properties);
   //     var filteredFeatures = _.filter(foundFeatures,function(feature) {return feature.properties[fieldName].indexOf(query) !== -1});
   //     jade.renderFile(__dirname + '/../../views/table/_table_rows.jade',{layerTableRows: filteredFeatures}, function (err, html) {
@@ -144,7 +144,7 @@ module.exports = {
     var fieldValue = req.query.filterFieldValue;
     var selector = JSON.parse('{"properties.' + fieldName + '": "'+ fieldValue + '"}');
     console.log(selector);
-    Feature.find().where({"fcID": fcID}).where(selector).done(function(err,foundFeatures){
+    Feature.find().where({"fcID": fcID}).where(selector).exec(function(err,foundFeatures){
       if (err) return next(err);
       // if (err) return res.json({message: "err", err: err, });
       if (foundFeatures.length === 0) return res.json({message: "success", html: "<tr><td class='success'>No Results Found</td></tr>"});
@@ -157,7 +157,7 @@ module.exports = {
   },
 
   stats: function(req,res) {
-    Feature.find().where({"fcID": "528452c49940909288001993"}).where({"properties.User_Type": "COMI"}).done(function(err,features){
+    Feature.find().where({"fcID": "528452c49940909288001993"}).where({"properties.User_Type": "COMI"}).exec(function(err,features){
       res.view({features: JSON.stringify(features)});
     });
   },

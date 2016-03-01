@@ -1,4 +1,4 @@
-!!! 5
+doctype html
 html
   head
     title
@@ -6,16 +6,14 @@ html
     meta(name='viewport', content='width=device-width, initial-scale=1, maximum-scale=1')
           
     // STYLES
-    link(rel="stylesheet", href="/linker/styles/L.Control.Locate.css")
-    link(rel="stylesheet", href="/linker/styles/bootstrap.css")
-    link(rel="stylesheet", href="/linker/styles/dashboard.css")
-    link(rel="stylesheet", href="/linker/styles/join.css")
-    link(rel="stylesheet", href="/linker/styles/jquery.fileupload.css")
-    link(rel="stylesheet", href="/linker/styles/jquery.switchButton.css")
-    link(rel="stylesheet", href="/linker/styles/map.css")
-    link(rel="stylesheet", href="/linker/styles/map_forms.css")
-    link(rel="stylesheet", href="/linker/styles/select2/select2.css")
-    link(rel="stylesheet", href="/linker/styles/table.css")
+    link(rel="stylesheet", href="/styles/L.Control.Locate.css")
+    link(rel="stylesheet", href="/styles/bootstrap.css")
+    link(rel="stylesheet", href="/styles/dashboard.css")
+    link(rel="stylesheet", href="/styles/importer.css")
+    link(rel="stylesheet", href="/styles/join.css")
+    link(rel="stylesheet", href="/styles/jquery.fileupload.css")
+    link(rel="stylesheet", href="/styles/jquery.switchButton.css")
+    link(rel="stylesheet", href="/styles/select2/select2.css")
     // STYLES END
     
     script(src='/js/jquery-1.10.2.min.js')
@@ -24,17 +22,27 @@ html
     script(src='/js/jquery.fileupload.js')
 
     // SCRIPTS
-    script(type="text/javascript", src="/linker/js/bootstrap.js")
-    script(type="text/javascript", src="/linker/js/d3.v3.min.js")
-    script(type="text/javascript", src="/linker/js/jquery-ui.js")
-    script(type="text/javascript", src="/linker/js/jquery.colorPicker.js")
-    script(type="text/javascript", src="/linker/js/jquery.switchButton.js")
-    script(type="text/javascript", src="/linker/js/select2.js")
-    script(type="text/javascript", src="/linker/js/select2.min.js")
-    script(type="text/javascript", src="/linker/js/spin.min.js")
-    script(type="text/javascript", src="/linker/js/timestamp.js")
-    script(type="text/javascript", src="/linker/js/underscore-min.js")
-    script(type="text/javascript", src="/linker/js/underscore.strings.js")
+    script(src="/js/dependencies/sails.io.js")
+    script(src="/js/L.Control.Locate.js")
+    script(src="/js/bootstrap.js")
+    script(src="/js/d3.v3.min.js")
+    script(src="/js/jquery-1.10.2.min.js")
+    script(src="/js/jquery-ui.js")
+    script(src="/js/jquery.colorPicker.js")
+    script(src="/js/jquery.fileupload.js")
+    script(src="/js/jquery.iframe-transport.js")
+    script(src="/js/jquery.switchButton.js")
+    script(src="/js/jquery.ui.widget.js")
+    script(src="/js/leaflet.spin.js")
+    script(src="/js/leaflet.tile.interaction.js")
+    script(src="/js/leaflet.utfgrid.js")
+    script(src="/js/leaflet.utilities.js")
+    script(src="/js/select2.js")
+    script(src="/js/select2.min.js")
+    script(src="/js/spin.min.js")
+    script(src="/js/timestamp.js")
+    script(src="/js/underscore-min.js")
+    script(src="/js/underscore.strings.js")
     // SCRIPTS END
 
   body
@@ -43,24 +51,24 @@ html
         .navbar-header
           img.navbar-brand(src='/images/logo_words.png', style='height: 50px; position: relative; top: -2px;')
           ul#navbarMain.nav.navbar-nav
-            - var active = ((req.target.controller === 'featurecollection') && (req.target.action === 'index')) ? "active" : ""
+            - var active = ((req.options.controller === 'featurecollection') && (req.options.action === 'index')) ? "active" : ""
             li(class="#{active}")
               a#navTable(href="/featurecollection")
                 | Features
-            - if ((req.target.controller != 'table') && (req.target.action != 'show'))
-              - var active = (req.target.controller === 'map') ? "active" : ""
+            - if ((req.options.controller != 'table') && (req.options.action != 'show'))
+              - var active = (req.options.controller === 'map') ? "active" : ""
               li
                 a#navMap(href="/map")
                   | Map
-              - var active = (req.target.controller === 'catalog') ? "active" : ""
+              - var active = (req.options.controller === 'catalog') ? "active" : ""
               li
                 a#navCatalog(href="/catalog")
                   | Catalog
-              - var active = ((req.target.controller === 'layer') && (req.target.action === 'join')) ? "active" : ""
+              - var active = ((req.options.controller === 'layer') && (req.options.action === 'join')) ? "active" : ""
               li
                 a#navJoin(href="/layer/join")
                   | Join
-              - var active = ((req.target.controller === 'table') && (req.target.action === 'stats')) ? "active" : ""
+              - var active = ((req.options.controller === 'table') && (req.options.action === 'stats')) ? "active" : ""
               li
                 a#navStats(href="/table/stats")
                   | Stats

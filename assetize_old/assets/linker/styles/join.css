@@ -1,0 +1,60 @@
+#joinContainer {
+	padding-top: 50px;
+	background-color: none;
+}
+
+#joinContainer label {
+  display: inline-block;  
+  cursor: pointer;  
+  position: relative;  
+  padding-left: 25px;  
+  margin-right: 15px;  
+  font-size: 13px;  
+}
+
+#joinContainer .radio {
+	padding-left: 5px;
+}
+
+#joinContainer input.fancyRadio[type=radio] {  
+	display: none;  
+} 
+
+#joinContainer label.fancyRadio:before {  
+  content: "";  
+  display: inline-block;  
+
+  width: 16px;  
+  height: 16px;  
+
+  margin-right: 10px;  
+  position: absolute;  
+  left: 0px;  
+  background-color: white;  
+  box-shadow: inset 0px 0px 0px 0px rgba(0, 0, 0, 1), 0px 0px 0px 0px rgba(0, 0, 0, 1);  
+  border: 1px solid black;
+}  
+
+#joinContainer .radio label.fancyRadio:before {  
+	border-radius: 8px;  
+}
+
+#joinContainer input.fancyRadio[type=radio]:checked + label.fancyRadio:before {  
+  content: "\2022";  
+  color: black;  
+  font-size: 37px;  
+  text-align: left;  
+  line-height: 15px;  
+} 
+
+#joinContainer div.joinPropertyField {
+	border-bottom: 1px dotted #CCC; 
+	padding-top: 2px; 
+	padding-bottom: 2px;
+}
+
+#joinContainer div.joinPropertyField:last-child {
+	border-bottom: none; 
+	padding-top: 2px; 
+	padding-bottom: 2px;
+}

@@ -18,9 +18,10 @@
 module.exports = {
 
 	index: function(req,res) {
-    FeatureCollection.find().done(function(err,arrFC){
+    FeatureCollection.find().exec(function(err,arrFC){
       if (err) return next(err);
       if (!arrFC) return next();
+      console.log(req.options.controller);
       res.view({featureCollections: arrFC, currentView: req.url});
     });
   },
@@ -38,17 +39,17 @@ module.exports = {
 
 	destroy: function(req,res) {
 		var fcID = req.params.id;
-		FeatureCollection.destroy({"id": fcID}).done(function(err,arrFC){
+		FeatureCollection.destroy({"id": fcID}).exec(function(err,arrFC){
 			if (err) return next(err);
 			if (!arrFC) return next();
 
       FeatureCollection.publishDestroy(fcID);
 
-			Feature.destroy({"fcID": fcID}).done(function(err,arrF){
+			Feature.destroy({"fcID": fcID}).exec(function(err,arrF){
 				if (err) return next(err);
 				if (!arrF) return next();
 
-				Layer.destroy({"fcID": fcID}).done(function(err,arrL){
+				Layer.destroy({"fcID": fcID}).exec(function(err,arrL){
 					if (err) return next(err);
 					if (!arrL) return next();
 				});
@@ -60,7 +61,7 @@ module.exports = {
 
   subscribe: function(req,res) {
     FeatureCollection.subscribe(req.socket);
-    FeatureCollection.find().done(function(err,foundUsers){
+    FeatureCollection.find().exec(function(err,foundUsers){
       if (err) {return next(err)};
       if (!foundUsers) return next();
       FeatureCollection.subscribe(req.socket,foundUsers);

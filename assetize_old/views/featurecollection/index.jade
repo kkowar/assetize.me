@@ -1,0 +1,57 @@
+extends ../layout
+include _m_fc_row
+block content
+  script(src='/js/socket.io.js')
+  script(src='/js/sails.io.js')
+  script(src='/js/app.js')
+  #layerContainer.container
+    .col-md-12
+      div &nbsp;
+      span.btn.btn-success.fileinput-button
+        i.glyphicon.glyphicon-plus
+        span Add a Feature Collection
+        input#fileupload(type='file', name='files[]', multiple='')
+      div &nbsp;
+    .col-md-12
+      div
+        table.table.table-striped.table-hover
+          thead
+            tr
+              th(style='white-space: nowrap;') Name
+              th Type
+              th Count
+              th Created At
+              th Updated at
+              th Actions
+          tbody#tbody_feature_collection
+            - each fc in featureCollections
+              +feature_collection_row(fc)
+
+  script.
+    $(document).ready(function() {
+      'use strict';
+      $('#fileupload').fileupload({
+        url: '/featurecollection/upload',
+        // dataType: 'json'
+        done: function (e, data) {
+          // $.each(data.result.files, function (index, file) {
+          //     $('<p/>').text(file.name).appendTo('#files');
+          // });
+          //- console.log(data.result);
+          // window.location("/featurecollection");
+        },
+        progressall: function (e, data) {
+          // var progress = parseInt(data.loaded / data.total * 100, 10);
+          // $('#progress .progress-bar').css(
+          //     'width',
+          //     progress + '%'
+          // );
+        }
+      });
+      $(document).on("click touchend",".remove-featureClass",function (e) {
+        e.preventDefault();
+        var fcID = (e.currentTarget.id).split("_")[1];
+        // $("#fc_" + fcID).parent().parent().remove();
+        $.ajax('/featurecollection/' + fcID, {type: 'DELETE'});
+      });
+    });

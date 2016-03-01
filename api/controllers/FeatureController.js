@@ -18,7 +18,7 @@
 module.exports = {
 
 	count: function(req,res) {
-		Feature.find().done(function(err,arrF){
+		Feature.find().exec(function(err,arrF){
 			if (err) return next(err);
 			if (!arrF) return next();
 			var count = arrF.length;

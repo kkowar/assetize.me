@@ -8,9 +8,9 @@ mixin line_simple_form(layer)
 				| Line Stroke
 			span.pull-right.brushes(id="stroke_#{layer.id}_0")
 				+form_weight(style.stroke.weight)
-				&nbsp;
+				| 
 				+form_color(style.stroke.color)
-				&nbsp;
+				| 
 				+form_opacity(style.stroke.opacity,layer.id,0)
 
 mixin line_category_form(layer)
@@ -26,7 +26,7 @@ mixin line_category_form(layer)
 				| Line Stroke
 			span.pull-right.brushes(id="stroke_#{layer.id}_0")
 				+form_weight(style.stroke.weight)
-				&nbsp;
+				| 
 				+form_opacity(style.stroke.opacity,layer.id,0)
 		
 		- each fieldValue, index in style.fieldValuesCount
@@ -34,8 +34,7 @@ mixin line_category_form(layer)
 				span.badge(style="font-size: 10px; width: 40px; background-color: white; position: relative; top: 4px; border: 1px solid #666666; color: #666666;")
 					= fieldValue[1]
 				span.description
-					&nbsp;
-					&nbsp;
+					|  
 					= _.str.truncate(fieldValue[0],15)
 				span.pull-right.brushes(id="stroke_#{layer.id}_#{index}")
 					+form_color(style.fieldFillColor[index])
@@ -45,8 +44,7 @@ mixin line_category_form(layer)
 				span.badge(style="font-size: 10px; width: 40px; background-color: white; position: relative; top: 4px; border: 1px solid #666666; color: #666666;")
 					= style.fieldValuesOthersCount
 				span.description 
-					&nbsp;
-					&nbsp;
+					|  
 					| Others
 				span.pull-right.brushes(id="stroke_#{layer.id}_others")
 					+form_color(style.fieldOthersFill)
@@ -64,7 +62,7 @@ mixin line_choropleth_form(layer)
 				| Line Stroke
 			span.pull-right.brushes(id="stroke_#{layer.id}_0")
 				+form_weight(style.stroke.weight)
-				&nbsp;
+				| 
 				+form_opacity(style.stroke.opacity,layer.id,0)
 		.row
 			span.description

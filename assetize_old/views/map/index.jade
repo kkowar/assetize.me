@@ -1,0 +1,313 @@
+extends ../layout
+include _m_layer
+block content
+  link(rel="stylesheet" href="http://cdn.leafletjs.com/leaflet-0.7/leaflet.css")
+  link(rel="stylesheet" href="/linker/styles/map.css")
+  link(rel="stylesheet" href="/linker/styles/L.Control.Locate.css")
+  script(src="http://cdn.leafletjs.com/leaflet-0.7/leaflet.js")
+  script(src='/js/leaflet.spin.js')
+  script(src='/js/leaflet.utfgrid.js')
+  script(src='/js/leaflet.utilities.js')
+  script(src='/js/leaflet.tile.interaction.js')
+  script(src='/js/L.Control.Locate.js')
+  #mapPopupModal.modal.fade(tabindex="-1" role="dialog" aria-labelledby="filterColumnModalLabel" aria-hidden="true")
+    .modal-dialog
+      .modal-content
+        .modal-header
+          button.close(type="button" data-dismiss="modal" aria-hidden="true") &times;
+          h4#filterColumnModalLabel.modal-title Asset Information
+        .modal-body
+          span.pull-left
+            img(data-src="holder.js/100%x180" alt="..." src="/images/img-rounded.png")
+          span.pull-left(style="padding-left: 20px;")
+            h4 Asset Condition
+            .rating-container
+              .star.glyphicon.glyphicon-star-empty
+              .star.glyphicon.glyphicon-star-empty
+              .star.glyphicon.glyphicon-star-empty
+              .star.glyphicon.glyphicon-star-empty
+              .star.glyphicon.glyphicon-star-empty
+          .clearfix
+          .data
+        .modal-footer
+          button.btn.btn-default(type="button" data-dismiss="modal") Cancel
+          button.btn.btn-primary(type="button") Confirm
+  #mapContainer
+    .row
+      .col-xs-3.no-print(style="padding-right: 0px;")
+        #map_sidebar(style="background-color:; height: 100px;") 
+          #assetFilterMenu(style="background-color: ; padding: 5px; padding-left: 10px;")
+            select#assetFilterMenuSelect(style="width: 74%;")
+              option
+              - each fc in feature_collections
+                option.assetFilterMenuItem(value="#{fc.id}")
+                  = fc.name
+            button#assetFilterItemAdd.btn.btn-default.btn-xs(type="button" style="width: 23%; height: 26px;")
+              strong Add
+
+          #map_layers.layers-sortable(data="#{layers.length}" style="padding: 5px 10px 5px 10px;")
+            - each layer in layers
+              +layer(layer)
+
+      .col-xs-9(style="background-color: tan; padding-left: 0px;")
+        #map(style="height: 200px;")
+
+  script.
+    var gMap = undefined;
+    var gLayers = {};
+    var gLayersCount = 0;
+    var polling = undefined;
+
+    $( document ).ready(function() {
+
+      setScreenElementDimensions();
+
+      setupAddAssetForm();
+
+      setupLayerControls();
+
+      setupLayerStyleDialogs();
+
+      initLeafletMap();
+      
+    });
+    
+    var setScreenElementDimensions = function () {
+      var height = window.innerHeight - 50
+      $("#map").css("height",height);
+      $("#map_sidebar").css("height",height);
+    };
+
+    var setupAddAssetForm = function () {
+      $("#assetFilterMenuSelect").select2({
+        placeholder: "Select an Asset..."
+      });
+      
+      $("#assetFilterItemAdd").click(function (e) { 
+        gMap.spin(true);
+        var fcID = $('#assetFilterMenuSelect').val();
+        if (!_.isEmpty(fcID)) {
+          $.ajax({url: "/map/layer?fcID=" + fcID}).done(function(data) {
+            $("#map_layers").prepend(data);
+            var elID = $(data).attr("id");
+            console.log(elID);
+            var layerID = elID.replace("layer_","");
+            $("#" + elID + " .form_color .colorPicker").colorPicker();
+            setupSelect2DropDown("#" + elID + " select.layer-style-dropdown");
+            $("#" + elID + " select.layer-style-dropdown").on("click", function (e) {
+              handleLayerStyleDropDownClick(e);
+            });
+            drawLeafletLayers(gLayers,gMap);
+            //- var arrLayersID = $(".layers-sortable").sortable("toArray");
+            //- var scrubbedIDs = _.map(arrLayersID,function(id){return id.split("_")[1]});
+            // updateLayerDrawOrder(scrubbedIDs,gLayers,gMap);
+            drawZIndexOrder(gLayers,gMap);
+            gMap.spin(false);
+          });
+        };
+      });
+    };
+
+    var setupLayerControls = function () {
+
+      setupLayerSorting();
+
+      $(document).on("click","input[type=checkbox]", function (e) {
+        var layerID = e.currentTarget.value;
+        if (e.currentTarget.checked === false) {
+          gMap.removeLayer(gLayers[layerID].layer);
+          gMap.removeLayer(gLayers[layerID].layerGrid);
+          updateLayerVisibility(layerID,false);
+        } else {
+          gMap.addLayer(gLayers[layerID].layer);
+          gMap.addLayer(gLayers[layerID].layerGrid);
+          updateLayerVisibility(layerID,true);
+        };
+        drawZIndexOrder(gLayers,gMap);
+      });
+      
+      $(document).on("click touchend",".remove-layer",function (e) {
+        e.preventDefault();
+        var layerID = (e.currentTarget.id).split("_")[1];
+        $.ajax({url: "layer/destroy/" + layerID}).done(function(data){
+          $("#layer_" + layerID).remove();
+          gMap.removeLayer(gLayers[layerID].layer);
+          gMap.removeLayer(gLayers[layerID].layerGrid);
+          // todo: put the layer name back in the option box
+        });
+      });
+    }
+
+    var setupLayerSorting = function () {
+      $(".layers-sortable").sortable({
+        axis: 'y',
+        handle: '.drag-handle',
+        cursor: 'move'
+      });
+      $(".layers-sortable").disableSelection();
+      $(".layers-sortable").on("sortupdate",function(e,ui){
+        var arrLayersID = $(".layers-sortable").sortable("toArray");
+        var scrubbedIDs = _.map(arrLayersID,function(id){return id.split("_")[1]});
+        updateLayerDrawOrder(scrubbedIDs,gLayers,gMap);
+      });
+    };
+
+    var setupLayerStyleDialogs = function () {
+      setupLayerStyleDropdowns();
+      setupColorPicker();
+      setupOpacityStrokeSizeForms();
+    };
+    
+    var setupLayerStyleDropdowns = function() {
+      setupSelect2DropDown("select.layer-style-dropdown");
+      $("select.layer-style-dropdown").on("click", function (e) {
+        handleLayerStyleDropDownClick(e);
+      });
+    };
+
+    var setupColorPicker = function () {
+      $.fn.colorPicker.defaults.colors = ['FFFFD4', 'FEE391', 'FEC44F', 'FE9929','D95F0E', '993404', 
+                                          'EFF3FF','C6DBEF','9ECAE1','6BAED6','3182BD','08519C',
+                                          '8C510A','D8B365','F6E8C3','C7EAE5','5AB4AC','5AB4AC',
+                                          'D73027','FC8D59','FEE090','E0F3F8','91BFDB','4575B4',
+                                          'E41A1C','377EB8','4DAF4A','984EA3','FF7F00','FFFF33',
+                                          '8DD3C7','FFFFB3','BEBADA','FB8072','80B1D3','FDB462',
+                                          'A6CEE3','1F78B4','B2DF8A','33A02C','FB9A99','E31A1C',
+                                          'FDBF6F','FF7F00','CAB2D6','6A3D9A','ffffff','000000'];
+
+      $(".colorPicker").colorPicker();
+
+      $(document).on("change","input.colorPicker",function(e){
+        var target = $(e.currentTarget);
+        var targetSplit = target.parent().parent().attr("id").split("_");
+        var action = targetSplit[0];
+        var layerID = targetSplit[1];
+        var subLayerID = targetSplit[2];
+        var newColor = e.target.value;
+        //- console.log([action,layerID,subLayerID,newColor]);
+        updateTileLayerColor(layerID,newColor,action,subLayerID,gLayers);
+      });
+    };
+
+    var setupOpacityStrokeSizeForms = function () {
+      $(document).on("click",".layer-form a",function (e) {
+        e.stopPropagation();
+        e.preventDefault();
+        var target = $(e.currentTarget);
+        if (target.parent().hasClass('form_color')) return;
+        var attribute = undefined;
+        if (target.parent().hasClass('form_radius')) attribute = 'radius';
+        if (target.parent().hasClass('form_opacity')) attribute = 'opacity';
+        if (target.parent().hasClass('form_weight')) attribute = 'weight';
+        var action = target.parent().parent().attr("id").split("_")[0];
+        var layerID = target.parent().parent().attr("id").split("_")[1];
+        var increment = target.hasClass("plus") ? true : false;
+        var input = target.siblings('input');
+        var inputVal = parseFloat(target.siblings('input').val());
+        if ((attribute === 'opacity') || (attribute === 'weight') || (attribute === 'radius')) {
+          var step = (attribute === 'opacity') ? 0.1 : 0.5
+          if (increment) {
+            if (attribute === 'opacity') {
+              inputVal = (inputVal === 1.0) ? 1.0 : (inputVal + step);
+            } else {
+              inputVal = inputVal + step;
+            };
+          } else {
+            inputVal = (inputVal === 0) ? 0 : (inputVal - step);
+          };
+          fixedInputVal = inputVal.toFixed(1); 
+          fixedInputVal = inputVal;
+          input.val(fixedInputVal);
+          style = undefined;
+          if (attribute === 'opacity') {
+            if (action === "fill") {style = {fillOpacity: fixedInputVal}};
+            if (action === "stroke") {style = {opacity: fixedInputVal}};
+          };
+          if (attribute === 'weight') {
+            style = {weight: fixedInputVal};
+          };
+          if (attribute === 'radius') {
+            style = {radius: fixedInputVal};
+          };
+          //- Geojson Layer Update
+          //- updateGeojsonLayerStyle(layerID,fixedInputVal,action,attribute,layers);
+          updateTileLayerStyle(layerID,fixedInputVal,action,attribute,gLayers);
+        };
+      });
+    };
+
+    var initLeafletMap = function () {
+      gMap = generateLeafletBaseMap();
+      initPollingGLayers();
+      drawLeafletLayers(gLayers,gMap);
+      var arrLayersID = $(".layers-sortable").sortable("toArray");
+      var scrubbedIDs = _.map(arrLayersID,function(id){return id.split("_")[1]});
+      updateLayerDrawOrder(scrubbedIDs,gLayers,gMap);
+    };
+
+    var initPollingGLayers = function() {
+      gLayersCount = $("#map_layers").attr("data");
+      if (gLayersCount > 0) {
+        //- gMap.spin(true);
+        polling = setInterval(pollGLayers,500);
+      };
+    };
+
+    // Polls to make sure all Map layers 
+    // have loaded and then sets zIndex draw order.
+    var pollGLayers = function(){
+      var gLayersLength = Object.keys(gLayers).length;
+      var gMapLayersLength = Object.keys(gMap._layers).length;
+      if (gLayersCount.toString() === gLayersLength.toString()){
+        clearInterval(polling);
+        drawZIndexOrder(gLayers,gMap);
+        gMap.spin(false);
+        //- redrawMapBounds();
+      };
+    };
+
+    var handleLayerStyleDropDownClick = function (e) {
+      gMap.spin(true);
+      var layerID = $(e.currentTarget).attr("id").split("_")[1];
+      var fcID = $(e.currentTarget).attr("id").split("_")[2];
+      var style = $("#s2id_type_" + layerID + "_" + fcID + " .select2-chosen").html();
+      var field = $("#s2id_field_" + layerID + "_" + fcID + " .select2-chosen").html();
+      var buckets = $("#s2id_bucket_" + layerID + "_" + fcID + " .select2-chosen").html()
+      if (buckets !== undefined) buckets = buckets.replace(" Buckets","");
+      var classification = $("#s2id_classification_" + layerID + "_" + fcID + " .select2-chosen").html();
+      data = {
+          type: style
+        , field: field
+        , buckets: buckets
+        , classification: classification
+        , fcID: fcID
+        , layerID: layerID
+      };
+      console.log(e.currentTarget);
+      console.log(data);
+      var jLayer = "#layer_" + layerID;
+      $(jLayer + " .layer-forms").html("");
+      $.ajax({url: "/style/generate", data: data}).done(function(html){
+        $(jLayer + " .layer-forms").html(html);
+        setupSelect2DropDown(jLayer + " select.layer-style-dropdown");
+        $(jLayer + " select.layer-style-dropdown").on("click", function (e) {
+          handleLayerStyleDropDownClick(e);
+        });
+        $(jLayer + " .form_color .colorPicker").colorPicker();
+        // Old Style Type Dropdown Map Actions
+        //- gMap.removeLayer(gLayers[layerID].layer);
+        //- gLayers[layerID] = undefined;
+        // New Style Type Dropdown Map Actions
+        gLayers[layerID].redefine = true;
+        drawLeafletLayers(gLayers,gMap);
+        gMap.spin(false);
+      })
+    };
+
+    var setupSelect2DropDown = function (selector) {
+      $(selector).select2({
+        dropdownAutoWidth: true
+      });
+    };
+
+  

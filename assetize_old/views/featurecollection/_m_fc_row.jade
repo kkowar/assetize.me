@@ -1,0 +1,16 @@
+mixin feature_collection_row(fc)
+  tr.feature_collection(id="feature_collection_#{fc.id}")
+    td.location_code
+      a(href="/table/#{fc.id}")
+        = fc.name
+    td
+      = fc.geometryType
+    td
+      span.badge
+        = fc.totalFeatures
+    td
+      = fc.createdAt
+    td
+      = fc.updatedAt
+    td
+      span.glyphicon.glyphicon-remove.remove-featureClass(id="fc_#{fc.id}" style="color: red;")

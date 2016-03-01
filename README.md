@@ -1,4 +1,3 @@
-# assetize.me
-### Open Source Municipal Infrastructure Management
+# assetizeme
 
-More to come soon..... 
+a [Sails](http://sailsjs.org) application

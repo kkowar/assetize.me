@@ -1,0 +1,313 @@
+extends ../layout
+include _m_table_rows
+
+block content
+  #filterColumnModal.modal.fade(tabindex="-1" role="dialog" aria-labelledby="filterColumnModalLabel" aria-hidden="true")
+    .modal-dialog
+      .modal-content
+        .modal-header
+          button.close(type="button" data-dismiss="modal" aria-hidden="true") &times;
+          h4#filterColumnModalLabel.modal-title Filter Column 
+        .modal-body
+          input#filter_fcID(type="hidden" value="#{fcID}")
+          input#filter_fieldIndex(type="hidden" value="")
+          input#filter_fieldName(type="hidden" value="")
+          input#filter_fieldValue.form-control(type="text" placeholder="Filter Value")
+        .modal-footer
+          button.btn.btn-default(type="button" data-dismiss="modal") Cancel
+          button.btn.btn-primary(type="button") Add Filter
+
+  #renameColumnModal.modal.fade(tabindex="-1" role="dialog" aria-labelledby="renameColumnModalLabel" aria-hidden="true")
+    .modal-dialog
+      .modal-content
+        .modal-header
+          button.close(type="button" data-dismiss="modal" aria-hidden="true") &times;
+          h4#renameColumnModalLabel.modal-title Rename column 
+        .modal-body
+          input#rename_fcID(type="hidden" value="#{fcID}")
+          input#rename_fieldIndex(type="hidden" value="")
+          input#rename_fieldName.form-control(type="text" placeholder="New Column Name")
+        .modal-footer
+          button.btn.btn-default(type="button" data-dismiss="modal") Cancel
+          button.btn.btn-primary(type="button") Save Changes
+
+  #layerTable.col-xs-12(style="padding-top: 50px; padding-left: 0px; padding-right: 0px;")
+    .tableWrapper(id="fcID_#{fcID}")
+      table#sourceTable.table.tableScroll
+        thead.tableFixedHeader
+          tr
+            - each header, index in layerTableHeaders
+              th(class="th_#{index}")
+                span.dropdown
+                  span.dropdown-toggle(id="dropdown_menu_#{fcID}_#{index}" data-toggle="dropdown")
+                    div
+                      = header
+                      &nbsp;
+                      span.caret
+                    div(style="font-weight: normal; font-size: 0.75em; color: #CCC;")
+                      if thTypes[index - 1]
+                        = thTypes[index - 1]
+                      else
+                        &nbsp;
+                      //- = type
+                  ul.dropdown-menu(role="menu" aria-labelledby="dropdown_menu_#{fcID}_#{index}")
+                    li.disabled(role="presentation")
+                      a(role="menuitem" tabindex="-1" href="#" data-target="order_#{fcID}_#{index}")
+                        span
+                          | Order
+                        &nbsp;
+                        span.badge(style="font-weight: normal; font-size: .8em;position: relative; top: -1px;")
+                          | ASC
+                        &nbsp;
+                        span.badge(style="font-weight: normal; font-size: .8em;position: relative; top: -1px;")
+                          | DESC
+                    li(role="presentation")
+                      a(role="menuitem" tabindex="-1" href="#" data-target="rename_#{fcID}_#{index}")
+                        //- span(data-toggle="modal" data-target="#renameColumnModal")
+                        | Rename column...
+                    li.disabled(role="presentation")
+                      a(role="menuitem" tabindex="-1" href="#" data-target="change_#{fcID}_#{index}")
+                        | Change data type...
+                    li.disabled(role="presentation")
+                      a(role="menuitem" tabindex="-1" href="#" data-target="add_#{fcID}_#{index}")
+                        | Add a new column...
+                    li(role="presentation")
+                      a(role="menuitem" tabindex="-1" href="#" data-target="filter_#{fcID}_#{index}")
+                        | Filter by this column...
+                    li(role="presentation" class="divider")
+                    li(role="presentation")
+                      a(role="menuitem" tabindex="-1" href="" data-target="delete_#{fcID}_#{index}" style="color: #ff0000;")
+                        | Delete Column
+
+        tbody.tableScrollContent
+          +table_rows(layerTableRows)
+
+  script.
+    var gScrollX;
+    var gScrollY;
+    var gCurrentPage = 1;
+    var gInfiniteTrigger;
+
+    $( document ).ready(function() {
+      
+      $('.dropdown-toggle').dropdown();
+      $('a[role=menuitem]').click(function(e) {
+        e.preventDefault();
+        var arrDataTarget = $(e.currentTarget).attr("data-target").split("_");
+        var action = arrDataTarget[0];        
+        var fcID = arrDataTarget[1];
+        var fcFieldIndex = arrDataTarget[2];
+        console.log([action,fcID,fcFieldIndex]);
+        if (action === "delete") {deleteField(fcFieldIndex,fcID)};
+        if (action === "rename") {showRenameModal(fcFieldIndex,fcID)};
+        if (action === "filter") {showFilterModal(fcFieldIndex,fcID)};
+      })
+
+      //- $('#deleteColumnModal').modal({show: false})
+
+      $('#renameColumnModal').modal({show: false})
+
+      $("#renameColumnModal .btn-primary").click(function(e){
+        e.preventDefault();
+        var fcID = $("#renameColumnModal input#rename_fcID").val();
+        var fieldIndex = $("#renameColumnModal input#rename_fieldIndex").val();
+        var newFieldName = $("#renameColumnModal input#rename_fieldName").val();
+        $("#renameColumnModal").modal('hide');
+        renameField(fieldIndex,fcID,newFieldName);
+      });
+
+      $('#filterColumnModal').modal({show: false})
+
+      $("#filterColumnModal .btn-primary").click(function(e){
+        e.preventDefault();
+        var fcID = $("#filterColumnModal input#filter_fcID").val();
+        var fieldIndex = $("#filterColumnModal input#filter_fieldIndex").val();
+        var filterFieldName = $("#filterColumnModal input#filter_fieldName").val();
+        var filterFieldValue = $("#filterColumnModal input#filter_fieldValue").val();
+        $("#filterColumnModal").modal('hide');
+        console.log([fcID,fieldIndex,filterFieldName,filterFieldValue]);
+        filterField(fcID,fieldIndex,filterFieldName,filterFieldValue);
+      });
+
+      $("#searchColumnButton").click(function(e){
+        console.log("Search Button Click");
+        var fcID = $(".tableWrapper").attr("id").split("_")[1];
+        var query = $("#searchColumnInput").val();
+        var url = "/table/search?fcID=" + fcID + "&query=" + query;
+        $.ajax({url: url}).done(function(data){
+          $("tbody").html(data.html);
+          setTableDimensions();
+        });
+      });
+
+      $.fn.isOnScreen = function(){
+
+        var win = $(window);
+
+        var viewport = {
+            top : win.scrollTop(),
+            left : win.scrollLeft()
+        };
+        viewport.right = viewport.left + win.width();
+        viewport.bottom = viewport.top + win.height();
+
+        var bounds = this.offset();
+        bounds.right = bounds.left + this.outerWidth();
+        bounds.bottom = bounds.top + this.outerHeight();
+
+        return (!(viewport.right < bounds.left || viewport.left > bounds.right || viewport.bottom < bounds.top || viewport.top > bounds.bottom));
+
+      };
+      
+      $("tbody").scroll(function(){
+        // var actual_scroll_position = { x:$("tbody").scrollLeft(), y:$("tbody").scrollTop() };
+        var totalRecords = gCurrentPage * 50;
+        var tbody = $("table tbody");
+        var tbodyChildren = tbody.children();
+        var triggerVisible = tbodyChildren.last().isOnScreen();
+        if (tbodyChildren.length === totalRecords) {
+          gInfiniteTrigger = true;
+        };
+        if (triggerVisible && gInfiniteTrigger) {
+          gInfiniteTrigger = false;
+          gScrollX = tbody.scrollLeft();
+          gScrollY = tbody.scrollTop();
+          appendNewRows();
+        };
+      });
+    
+      setTableDimensions();
+      appendNewRows();
+      
+    });
+    
+    var setTableDimensions = function() {
+      // Setup the table dimensions.
+    
+      // Set the tbody height.
+      var tableHeight = (window.innerHeight - 50 - 20) + "px";
+      var tbodyHeight = (window.innerHeight - Number($("#sourceTable thead").css("height").replace("px","")) - 50 - 20) + "px";
+      $("#sourceTable").css({height: tableHeight});
+      $("#sourceTable tbody").css({height: tbodyHeight});
+    
+      // Figure out and set minimum column widths.
+      var $sourceTH = $("#sourceTable thead tr:first-child").children();
+      var $sourceTD = $("#sourceTable tbody tr:first-child").children();
+      var maxWidthsTH = [];
+      var maxWidthsTD = [];
+      var maxWidths = [];
+      var totWidth = 0;
+
+      // Iterate over TH to get all TH widths.
+      _.each($sourceTH, function (th,i) {
+        var width = $(th).css("width");
+        maxWidthsTH.push(Number(width.replace("px","")));
+      });
+      // console.log(maxWidthsTH);
+      _.each($sourceTD, function (td,i) {
+        var width = $(td).css("width");
+        maxWidthsTD.push(Number(width.replace("px","")));
+      });
+      // console.log(maxWidthsTD);
+      _.each(maxWidthsTH, function (thWidth,i) {
+        maxWidths.push((maxWidthsTD[i] > thWidth) ? maxWidthsTD[i] : thWidth);
+      });
+      // console.log(maxWidths);
+      // Set a Default width for the fID column.
+      maxWidths[0] = 100;
+      _.each(maxWidths, function(width,i) {
+        $("#sourceTable tbody tr:first-child td:nth-child(" + (i+1) + ")").css({width: width});
+        $("#sourceTable thead tr:first-child th:nth-child(" + (i+1) + ")").css({width: width});
+        totWidth = totWidth + width;
+      });
+      // console.log(totWidth);
+      $("#sourceTable").css({width: totWidth});
+      //- console.log(totWidth < window.innerWidth);
+      if (totWidth <= window.innerWidth) {
+        var diff = (window.innerWidth - totWidth)/2;
+        //- $(".tableWrapper").css("position","relative");
+        $(".tableWrapper").css("margin-left",diff);
+        //- if (!$("#layerTable").hasClass("container")) {
+        //-   $("#layerTable").addClass("container");
+        //-   $("#layerTable").css({width: totWidth});
+        //- };
+      };
+    
+      // $("tbody").scrollLeft(Session.get("scrollX"));
+      // $("tbody").scrollTop(Session.get("scrollY"));
+    
+    };
+    
+    var appendNewRows = function () {
+      var fcID = $(".tableWrapper").attr("id").split("_")[1];
+      var perPage = 50;
+      var nextPage = gCurrentPage + 1;
+      var skip = gCurrentPage * perPage;
+      var limit = perPage * gCurrentPage;
+      // console.log(timeStamp() + " -> fcID: " + fcID + ", currentPage: " + gCurrentPage + ", perPage: " + perPage + ", limit: " + limit + ", skip: " + skip);
+      // return colFeatures.find({},{limit: perPage, skip: skip * perPage, sort:{fid: -1}});
+      // ?fcID=" + fcID + "&limit=" + perPage + "&skip=" + skip
+      // , "properties.TypeAbbr": "PVC"
+      $.ajax({url: "/feature", data: {where: {"fcID": fcID}, limit: perPage, skip: skip}}).done(function(data){
+        var html = "";
+        _.each(data,function(row){
+          html = html + "<tr>";
+          html = html + "<td>" + row.fID + "</td>";
+          _.each(row.properties,function(property){
+              html = html + "<td>" + property + "</td>";
+          });
+          html = html + "</tr>";
+        });
+        $("tbody.tableScrollContent").append(html);
+        setTableDimensions();
+      });
+      gCurrentPage = nextPage;
+    };
+
+    var deleteField = function (fieldIndex,fcID) {
+      $.ajax({url: "/table?action=column&value=" + fieldIndex + "&fcID=" + fcID, method: "DELETE"}).done(function(data){
+        console.log(data);
+        window.location.replace("/table/" + fcID);
+      });
+    };
+
+    var showRenameModal = function (fieldIndex,fcID) {
+      //- console.log([fieldIndex,fcID]);
+      var jSelector = $("#dropdown_menu_" + fcID + "_" + fieldIndex + " div");
+      var fieldName = jSelector.html().split("&nbsp;")[0];
+      $("#renameColumnModalLabel").html("Rename column <strong>\"" + fieldName + "\"</strong>");
+      $("#renameColumnModal input#rename_fieldIndex").val(fieldIndex);
+      $("#renameColumnModal input#rename_fieldName").val(fieldName);
+      $("#renameColumnModal").modal('show');
+    };
+
+    var renameField = function (fieldIndex,fcID,newFieldName) {
+      console.log([fieldIndex,fcID,newFieldName]);
+      $.ajax({url: "/table", data: {action: "rename", fieldIndex: fieldIndex, newFieldName: newFieldName, fcID: fcID}, method: "PUT"}).done(function(data){
+        console.log(data);
+        window.location.replace("/table/" + fcID);
+      });
+    };
+
+    var showFilterModal = function (fieldIndex,fcID) {
+      var jSelector = $("#dropdown_menu_" + fcID + "_" + fieldIndex + " div");
+      var fieldName = jSelector.html().split("&nbsp;")[0];
+      console.log(fieldName);
+      $("#filterColumnModalLabel").html("Filter data by column <strong>\"" + fieldName + "\"</strong>");
+      $("#filterColumnModal input#filter_fieldIndex").val(fieldIndex);
+      $("#filterColumnModal input#filter_fieldName").val(fieldName);
+      $("#filterColumnModal").modal('show');
+    };
+
+    var filterField = function (fcID,fieldIndex,filterFieldName,filterFieldValue) {
+      console.log([fcID,fieldIndex,filterFieldName,filterFieldValue]);
+      $.ajax({url: "/table/filter", data: {action: "filter", fcID: fcID, filterFieldIndex: fieldIndex, filterFieldName: filterFieldName, filterFieldValue: filterFieldValue}, method: "GET"}).done(function(data){
+        console.log(data);
+        $("tbody").html(data.html);
+        setTableDimensions();
+        //- window.location.replace("/table/" + fcID);
+      });
+    };
+
+
+

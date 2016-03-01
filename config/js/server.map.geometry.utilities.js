@@ -7,6 +7,27 @@ tileY2lat = function (y,z) {
 	return (180/Math.PI*Math.atan(0.5*(Math.exp(n)-Math.exp(-n))));
 };
 
+// a tile is an array [x,y,z]
+tileToBBOX = function (tile) {
+  console.log("Tile: ");
+  console.log(tile);
+  var e = tileX2lon(tile[0] + 1, tile[2]);
+  var w = tileX2lon(tile[0], tile[2]);
+  var s = tileY2lat(tile[1] + 1, tile[2]);
+  var n = tileY2lat(tile[1], tile[2]);
+  console.log([w, s, e, n]);
+  return [w, s, e, n];
+};
+
+// function tile2lon(x, z) {
+//     return x / Math.pow(2, z) * 360 - 180;
+// }
+
+// function tile2lat(y, z) {
+//     var n = Math.PI - 2 * Math.PI * y / Math.pow(2, z);
+//     return r2d * Math.atan(0.5 * (Math.exp(n) - Math.exp(-n)));
+// }
+
 tileLatLonBounds = function (tx, ty, zoom) {
   // console.log("Returns bounds of the given tile in latitude/longitude using WGS84 datum");
 
@@ -57,6 +78,25 @@ calcResolution = function (zoom) {
 	 // return (2 * math.pi * 6378137) / (self.tileSize * 2**zoom)
 	return initialResolution / Math.pow(2,zoom);
 };
+
+// px_to_ll = function(px, zoom, sm) {
+//     var zoom_denom = sm.zc[zoom];
+//     var g = (px[1] - zoom_denom) / (-sm.Cc[zoom]);
+//     var lat = (px[0] - zoom_denom) / sm.Bc[zoom];
+//     var lon = sm.RAD_TO_DEG * (2 * Math.atan(Math.exp(g)) - 0.5 * Math.PI);
+//     return [lat, lon];
+// };
+
+// xyz_to_envelope = function(x, y, zoom, TMS_SCHEME,sm,mercator) {
+//   var size = sm.size;
+//   if (TMS_SCHEME) {
+//       y = (Math.pow(2, zoom) - 1) - y;
+//   }
+//   var ll = [x * size, (y + 1) * size];
+//   var ur = [(x + 1) * size, y * size];
+//   var bbox = px_to_ll(ll, zoom, sm).concat(px_to_ll(ur, zoom, sm));
+//   return mercator.forward(bbox);
+// };
 
 // lonlat2bbox = function(lon,lat,z) {
 // 	my ($lat, $lon, $zoom) = @_;
