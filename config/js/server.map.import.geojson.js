@@ -4,6 +4,7 @@ importGeoJSON = function (name,fileName) {
   fs.readFile(fileName, 'utf8', function (err,data) {
     if (err) {return console.log(err);};
     var fc = JSON.parse(data);
+    console.log(fc);
     createFeatureCollection(name,fc);
   });  
 };
@@ -70,15 +71,15 @@ createFeatureCollection = function (name,fc) {
                // todo: update length after dealing with multi type geometries.
                totalFeatures: fc.features.length
               };
-  FeatureCollection.create(newFC).done(function (err,createdFC) {
+  FeatureCollection.create(newFC).exec(function (err,createdFC) {
     if (err) return console.log(err);
-    createdFC.save(function(err, savedFC) {
+    createdFC.save(function(err) {
       if (err) return console.log(err);
-      jade.renderFile(__dirname + '/../../views/featurecollection/_fc_row.jade',{fc: savedFC}, function (err, html) {
+      jade.renderFile(__dirname + '/../../views/featurecollection/_fc_row.jade',{fc: createdFC}, function (err, html) {
         if (err) throw err;
-        FeatureCollection.publishCreate({id: savedFC.id, featureCollection: savedFC, html: html});
+        FeatureCollection.publishCreate({id: createdFC.id, featureCollection: createdFC, html: html});
       });
-      var fcID = savedFC.id;
+      var fcID = createdFC.id;
       _.each(fc.features,function (feature,index) {
         if (feature.geometry.type !== "MultiPolygon") {
           createFeature(feature,fcID,index);
@@ -139,7 +140,7 @@ createFeature = function (feature,fcID,index) {
   };
   Feature.create(f).exec(function (err,createdFeature) {
     if (err) return console.log(err);
-    createdFeature.save(function (err,savedFeature) {
+    createdFeature.save(function (err) {
       if (err) return console.log(err);
     });
   });

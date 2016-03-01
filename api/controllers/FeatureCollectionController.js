@@ -27,14 +27,28 @@ module.exports = {
   },
 
   upload: function(req,res) {
-    var file = req.files.files[0];
-    var fileExt = _.last(file.name.split("."));
-    var fileName = _.first(file.name.split("."));
-    if (fileExt === "geojson") {
-      importGeoJSON(fileName,file.path);
-    } else if (fileExt === "csv") {
-      importCSV2JSON(fileName,file.path);
-    };
+    // console.log(req);
+    req.file('uploaded_files').upload(function (err, uploadedFiles) {
+      console.log(uploadedFiles);
+      console.log(err);
+      // if (uploadedFiles.length === 0){
+      //   return res.badRequest('No file was uploaded');
+      // }
+      // var fileExt = 'noting';
+      // var file = req.files.files[0];
+      var filePath = uploadedFiles[0].fd;
+      var fileName = uploadedFiles[0].filename;
+      console.log(filePath);
+      var fileExt = _.last(fileName.split("."));
+      console.log(fileExt);
+      fileName = _.first(fileName.split("."));
+      console.log(fileName);
+      if (fileExt === "geojson") {
+        importGeoJSON(fileName,filePath);
+      } else if (fileExt === "csv") {
+        importCSV2JSON(fileName,filePath);
+      };
+    });
   },
 
 	destroy: function(req,res) {

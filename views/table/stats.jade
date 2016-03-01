@@ -51,7 +51,8 @@ block content
                  ,1086,1086,1088,1089,1090,1091,1094,1095,1096,1096];
 
     var features = JSON.parse(_.unescape("#{features}"));
-    var arr_total = _.compact(_.map(features,function(feature){return parseFloat(feature.properties["Total"])}));
+    console.log(features);
+    var arr_total = _.compact(_.map(features,function(feature){return parseFloat(feature.properties["Street_Cla"])}));
     //- console.log(arr_total.sort());
     console.log(_.min(arr_total));;
     console.log(_.max(arr_total));
@@ -213,7 +214,9 @@ block content
     //- var values = d3.range(1000).map(d3.random.irwinHall(10));
 
     var drawFrequencyChart = function(values,valBreaks,element) {
-
+      console.log(values);
+      console.log(valBreaks);
+      console.log(element);
       // A formatter for counts.
       var formatCount = d3.format(",.0f");
 
