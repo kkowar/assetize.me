@@ -79,7 +79,9 @@ mixin line_choropleth_form(layer)
 				- if (index != (style.fieldBreaks.length - 1))
 					.row
 						span.description
-							= fieldBreak.toFixed(2) + " ~ " + style.fieldBreaks[index + 1].toFixed(2)
+							- console.log(fieldBreak);
+							- console.log(style.fieldBreaks[index + 1]);
+							= parseFloat(fieldBreak).toFixed(2) + " ~ " + parseFloat(style.fieldBreaks[index + 1]).toFixed(2)
 						span.pull-right.brushes(id="fill_#{layer.id}_#{index}")
 							+form_color(style.fieldFillColor[index])
 
