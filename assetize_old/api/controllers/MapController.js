@@ -87,11 +87,11 @@ module.exports = {
         Layer.create(layer).done(function(err,createdLayer){
           if (err) return console.log(err);
           if (!createdLayer) return;
-          createdLayer.save(function(err,savedLayer){
+          createdLayer.save(function(err){
             if (err) return console.log(err);
             if (!createdLayer) return;
             // todo: better error handling.
-            res.view('map/_layer', {layer: savedLayer, layout: null});
+            res.view('map/_layer', {layer: createdLayer, layout: null});
           });
         });
         

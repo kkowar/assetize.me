@@ -173,6 +173,7 @@ block content
     var setupLayerStyleDropdowns = function() {
       setupSelect2DropDown("select.layer-style-dropdown");
       $("select.layer-style-dropdown").on("click", function (e) {
+        console.log("handleLayerStyleDropDownClick");
         handleLayerStyleDropDownClick(e);
       });
     };

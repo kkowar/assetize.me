@@ -59,18 +59,18 @@ module.exports = {
         if (!foundFC) return console.log(foundFC);
         var property = foundFC.properties[propIndex]
         foundFC.properties.splice(propIndex,1);
-        foundFC.save(function(err,savedFC) {
+        foundFC.save(function(err) {
           if (err) return console.log(err);
-          if (!savedFC) return console.log(savedFC);
+          if (!foundFC) return console.log(foundFC);
           Feature.find({"fcID": fcID}).exec(function(err,foundFeatures) {
             if (err) return console.log(err);
             if (foundFeatures.length === 0) return console.log(foundFeatures);
             _.each(foundFeatures,function(feature) {
               feature.properties = _.omit(feature.properties,property.name);
               feature.xml = createFeatureXML(feature);
-              feature.save(function(err,savedFeature) {
+              feature.save(function(err) {
                 if (err) return console.log(err);
-                if (!savedFeature) return console.log(savedFeature);
+                if (!feature) return console.log(feature);
               });
             });
             return res.json({message: "Column " + property.name + " deleted."});
@@ -95,15 +95,15 @@ module.exports = {
       var fieldName = property.name;
       var fieldType = property.type;
       foundFC.properties[propIndex] = {name: newFieldName, type: fieldType};
-      foundFC.save(function(err,savedFC) {
+      foundFC.save(function(err) {
         Feature.find({"fcID": fcID}).exec(function(err,foundFeatures) {
           _.each(foundFeatures,function(feature) {
             feature.properties = _.pairs(feature.properties);
             feature.properties[propIndex][0] = newFieldName;
             feature.properties = _.object(feature.properties);            
-            feature.save(function(err,savedFeature) {
+            feature.save(function(err) {
               if (err) return console.log(err);
-              if (!savedFeature) return console.log(savedFeature);
+              if (!feature) return console.log(feature);
             });
           });
           return res.json({message: "Column " + fieldName + " renamed to " + newFieldName});

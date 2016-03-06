@@ -35,9 +35,9 @@ module.exports = {
         var geometryType = foundFC.geometryType;
         if (type === "Simple") {
           foundLayer.styles.type = "simple";
-          foundLayer.save(function(err,savedLayer){
+          foundLayer.save(function(err){
             if (err) return console.log(err);
-            if (!savedLayer) return;
+            if (!foundLayer) return;
             console.log("Render Geometery Simple: " + geometryType);
             if (geometryType === "Point" ) {res.view('map/_point_simple_form', {layer: foundLayer, layout: null})};
             if (geometryType === "Polygon" ) {res.view('map/_polygon_simple_form', {layer: foundLayer, layout: null})};
@@ -83,13 +83,13 @@ module.exports = {
               };
               foundLayer.styles.category = generateLayerStyle(newStyle);
             };
-            foundLayer.save(function(err,savedLayer){
+            foundLayer.save(function(err){
               if (err) return console.log(err);
-              if (!savedLayer) return;
+              if (!foundLayer) return;
               console.log("Render Geometery Category: " + geometryType);
-              if (geometryType === "Point") {res.view('map/_point_category_form', {layer: savedLayer, layout: null})};
-              if (geometryType === "Polygon") {res.view('map/_polygon_category_form', {layer: savedLayer, layout: null})};
-              if (geometryType === "LineString" || geometryType === "MultiLineString") {res.view('map/_line_category_form', {layer: savedLayer, layout: null})};
+              if (geometryType === "Point") {res.view('map/_point_category_form', {layer: foundLayer, layout: null})};
+              if (geometryType === "Polygon") {res.view('map/_polygon_category_form', {layer: foundLayer, layout: null})};
+              if (geometryType === "LineString" || geometryType === "MultiLineString") {res.view('map/_line_category_form', {layer: foundLayer, layout: null})};
             });
           });
         };
