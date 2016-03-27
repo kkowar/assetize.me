@@ -42,6 +42,10 @@ module.exports.routes = {
     controller: 'MapController',
     action: 'tiles'
   },
+  '/map/tiles/:layerID/:z/:x/:y.pbf': {
+    controller: 'MapController',
+    action: 'tiles'
+  },
   '/map/tiles/:layerID/:z/:x/:y.grid.json': {
     controller: 'MapController',
     action: 'tiles'

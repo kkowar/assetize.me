@@ -1,16 +1,26 @@
 extends ../layout
 include _m_layer
 block content
+
   link(rel="stylesheet" href="http://cdn.leafletjs.com/leaflet-0.7/leaflet.css")
-  link(rel="stylesheet" href="/styles/map.css")
-  link(rel="stylesheet" href="/styles/map_forms.css")
+  //- link(rel="stylesheet" href="/styles/map.css")
+  //- link(rel="stylesheet" href="/styles/map_forms.css")
   link(rel="stylesheet" href="/styles/L.Control.Locate.css")
+  link(rel="stylesheet", href="/styles/select2/select2.css")
+
   script(src="http://cdn.leafletjs.com/leaflet-0.7/leaflet.js")
+  script(src="/js/spin.min.js")
   script(src='/js/leaflet.spin.js')
   script(src='/js/leaflet.utfgrid.js')
+  script(src='/js/leaflet.popup.js')
   script(src='/js/leaflet.utilities.js')
+  script(src="/js/leaflet.utilities.tiles.js")
   script(src='/js/leaflet.tile.interaction.js')
+  script(src='/js/leaflet.MapboxVectorTile.min.js')
   script(src='/js/L.Control.Locate.js')
+  script(src="/js/jquery.colorPicker.js")
+  script(src="/js/select2.min.js")
+
   #mapPopupModal.modal.fade(tabindex="-1" role="dialog" aria-labelledby="filterColumnModalLabel" aria-hidden="true")
     .modal-dialog
       .modal-content
@@ -71,7 +81,7 @@ block content
 
       initLeafletMap();
 
-      loadStyleSheet("/styles/map_forms.css");
+      //- loadStyleSheet("/styles/map_forms.css");
       
     });
 
@@ -124,6 +134,7 @@ block content
 
       setupLayerSorting();
 
+      // Layer Visibility Checkbox Click
       $(document).on("click","input[type=checkbox]", function (e) {
         var layerID = e.currentTarget.value;
         if (e.currentTarget.checked === false) {
@@ -131,8 +142,14 @@ block content
           gMap.removeLayer(gLayers[layerID].layerGrid);
           updateLayerVisibility(layerID,false);
         } else {
+          console.log(layerID);
+          console.log(gLayers);
+          console.log(gLayers[layerID]);
+          console.log("Adding Map Layer");
           gMap.addLayer(gLayers[layerID].layer);
+          console.log("Adding Grid Layer");
           gMap.addLayer(gLayers[layerID].layerGrid);
+          console.log("updateLayerVisibility");
           updateLayerVisibility(layerID,true);
         };
         drawZIndexOrder(gLayers,gMap);
@@ -173,7 +190,6 @@ block content
     var setupLayerStyleDropdowns = function() {
       setupSelect2DropDown("select.layer-style-dropdown");
       $("select.layer-style-dropdown").on("click", function (e) {
-        console.log("handleLayerStyleDropDownClick");
         handleLayerStyleDropDownClick(e);
       });
     };
@@ -198,7 +214,7 @@ block content
         var subLayerID = targetSplit[2];
         var newColor = e.target.value;
         //- console.log([action,layerID,subLayerID,newColor]);
-        updateTileLayerColor(layerID,newColor,action,subLayerID,gLayers);
+        updateTileLayerColor(layerID,newColor,action,subLayerID,gLayers); 
       });
     };
 
@@ -274,7 +290,7 @@ block content
       if (gLayersCount.toString() === gLayersLength.toString()){
         clearInterval(polling);
         drawZIndexOrder(gLayers,gMap);
-        gMap.spin(false);
+        //- gMap.spin(false);
         //- redrawMapBounds();
       };
     };
@@ -285,7 +301,8 @@ block content
       var fcID = $(e.currentTarget).attr("id").split("_")[2];
       var style = $("#s2id_type_" + layerID + "_" + fcID + " .select2-chosen").html();
       var field = $("#s2id_field_" + layerID + "_" + fcID + " .select2-chosen").html();
-      var buckets = $("#s2id_bucket_" + layerID + "_" + fcID + " .select2-chosen").html()
+      var buckets = $("#s2id_buckets_" + layerID + "_" + fcID + " .select2-chosen").html()
+      console.log(buckets);
       if (buckets !== undefined) buckets = buckets.replace(" Buckets","");
       var classification = $("#s2id_classification_" + layerID + "_" + fcID + " .select2-chosen").html();
       data = {

@@ -35,6 +35,7 @@ module.exports = {
       if (err) return next(err);
       if (!arrFa) return next();
       var targetACount = arrFa.length;
+      console.log("targetACount: " + targetACount);
       // var values = _.uniq(_.map(arrFa,function (fA) {return fA["properties"][targetA.propName]}));
       // var selector = '"properties.' + targetA.propName + '": $in: ' + JSON.stringify(values);
       // console.log(selector);
@@ -42,11 +43,12 @@ module.exports = {
         if (err) return next(err);
         if (!arrFb) return next();
         var targetBCount = arrFb.length;
+        console.log("targetBCount: " + targetBCount);
         var newFC = { "type": "FeatureCollection",
                        "features": []
                      };
         _.each(arrFa,function(fA){
-          var foundFbs = _.filter(arrFb,function(fB){return fA["properties"][targetA.propName] === fB["properties"][targetB.propName]});
+          var foundFbs = _.filter(arrFb,function(fB){return fA["properties"][targetA.propName].toString() === fB["properties"][targetB.propName].toString()});
           _.each(foundFbs,function(foundFb){
             var newGeometry = (_.isEmpty(fA.geometry)) ? foundFb.geometry : fA.geometry;
             var newProperties = {}
@@ -71,9 +73,11 @@ module.exports = {
                            });
           })
         })
+
         if (newFC.features.length > 0){
           createFeatureCollection(mergeTableName,newFC);
         };
+
         // var joins = _.filter(arrFb, function(f){ return _.contains(values,f["properties"][targetB.propName]);});
         res.json({targetACount: targetACount, targetBCount: targetBCount, joins: newFC.features.length, newRecords: newFC.features[0]});
       });

@@ -1,0 +1,114 @@
+// Show
+
+Street
+Location Description
+Installed
+Replaced
+Pavement Classification
+Functional Classification
+Remaining Useful Life
+Condition: By Score, In Stars, Word Rating
+Estimated OCI
+Total Cost to Date
+
+Sub Categories in Show
+Map
+Location
+Details
+Inspections
+Tasks
+Traffic
+Linked Assets
+Attached Files
+
+// Dashboard
+
+Total Costs Pie Chart: Clean, Investigate, Inspect, Other
+Total Time Spent Pie Chart
+Task Status Breakout Chart
+Average Time to Complete Tasks
+Open Work Orders: List, Map
+Task List by Person
+New Records List
+
+// Library 
+All
+Requests
+Work
+Assets
+Resources
+
+// Requestors
+Address
+City
+Do Not Email
+Email Address
+First Name
+Last Name
+Inactive
+Full Name
+Primary Phone
+Secondary Phone
+State
+Street
+
+// Structure Manager
+Field
+Library
+Recordset
+Relationship
+
+
+// Protocols
+Name
+Asset Type
+Description
+Filter
+
+// Protocol Triggers (Protocol Has Many Triggers)
+Activity
+Activity Cost (Enter Formula)
+Trigger Type
+Estimated OCI From (Min PCI)
+Breakpoint OCI (Lucity)
+Estimated OCI Through (Max PCI)
+Minimum Life
+Misc Cost
+Contingency Cost
+Total Cost
+Post PCI
+Engineering Cost
+Testing Cost
+Patching Cost
+Surface After Maintenance
+Curb Replacement
+Sidewalk Replacement
+Driveway Replacement
+Combination of PCI and Factors
+	Patching %
+		min value
+		max value
+	Load
+	Non-Load
+	Environmental
+	Structural
+	Roughness
+
+
+// Trigger Types
+Grind
+Inspect
+Mill
+Overlay
+Patch
+Repair
+Replace
+Retire
+Seal
+
+// Cartegraph Main Headings
+Requests
+Work
+Assets
+Resources
+Reports

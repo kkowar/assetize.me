@@ -2,7 +2,9 @@ generateLeafletBaseMap = function () {
   L.Icon.Default.imagePath = 'packages/leaflet/images';
   var map = new L.Map('map');
   // Mapquest Aerial
-  var osmUrl = "http://otile1.mqcdn.com/tiles/1.0.0/sat/{z}/{x}/{y}.jpg"
+  // var osmUrl = "http://otile1.mqcdn.com/tiles/1.0.0/sat/{z}/{x}/{y}.jpg"
+  // Open Map Black and White
+  var osmUrl = "http://{s}.tiles.wmflabs.org/bw-mapnik/{z}/{x}/{y}.png"
   // Cloudmade Grayscale
   // var osmUrl = 'http://{s}.tile.cloudmade.com/91e9a402338a459ea47a305f917d85d0/256/{z}/{x}/{y}.png'
   var osmAttrib='Map data © OpenStreetMap contributors';
@@ -43,6 +45,7 @@ generateLeafletBaseMap = function () {
 initMapPopup = function (map) {
   map.on('click', function(e){
     var data = getUtfGridData(e);
+    // console.log(e);
     // console.log(data);
     var html = generateMultiplePopupHTML(data,e.latlng);
     if (data.length !== 0) {
@@ -150,33 +153,6 @@ getLayers = function(layers,map) {
       getTiles(layer,layers,map);
     })
   });
-};
-
-getTiles = function(layer,layers,map) {
-  if (layers[layer.id] === undefined) layers[layer.id] = {};
-
-  if (layers[layer.id].layer !== undefined) {
-    if (map.hasLayer(layers[layer.id].layer)) map.removeLayer(layers[layer.id].layer);
-  };
-
-  var tileUrl = '/map/tiles/' + layer.id + '/{z}/{x}/{y}.png'
-  var tileLayer = new L.TileLayer(tileUrl);
-  gMap.addLayer(tileLayer);
-  layers[layer.id].layer = tileLayer;
-
-  var utfGridUrl = '/map/tiles/' + layer.id + '/{z}/{x}/{y}.grid.json?callback={cb}'
-  var utfGridLayer = new L.UtfGrid(utfGridUrl, {resolution: 2});
-  gMap.addLayer(utfGridLayer);
-  layers[layer.id].layerGrid = utfGridLayer;
-
-  layers[layer.id].redefine = false;
-  if (layers[layer.id].zIndex === undefined) {layers[layer.id].zIndex = tileLayer.zIndex};
-  // if (layer.visible === "true") {
-  //   if (filteredLayer) {
-  // //     filteredLayer.addTo(map);
-  // //     drawZIndexOrder(gLayers,gMap);
-  //   };
-  // };
 };
 
 getFeatures = function(layer,layers,map,index) {
@@ -482,48 +458,7 @@ generatePropertiesArray = function(properties) {
   return arrProperties;
 };
 
-updateTileLayerColor = function(layerID,newColor,action,subLayerID,layers) {
 
-  $.ajax({url: "layer/find/" + layerID}).done(function(data){
-
-    var styleType = data.styles.type;
-    var geometryType = data.geometryType;
-
-    if (styleType === "category") {
-      if (subLayerID !== "others") {
-        if ((geometryType === "Point") || (geometryType === "Polygon")) {
-          if (action === "fill") {data.styles.category.fieldFillColor[subLayerID] = newColor;};
-          if (action === "stroke") {data.styles.category.stroke.color = newColor;};
-        };
-        if ((geometryType === "LineString") || (geometryType === "MultiLineString")) {
-          data.styles.category.fieldFillColor[subLayerID] = newColor;
-        };
-      } else {
-        data.styles.category.fieldOthersFill = newColor;
-      };
-    }; 
-
-    if (styleType === "choropleth") {
-      if ((geometryType === "Point") || (geometryType === "Polygon")) {
-        if (action === "fill") {data.styles.choropleth.fieldFillColor[subLayerID] = newColor;};
-        if (action === "stroke") {data.styles.choropleth.stroke.color = newColor;};
-      };
-      if ((geometryType === "LineString") || (geometryType === "MultiLineString")) {
-        data.styles.choropleth.fieldFillColor[subLayerID] = newColor;
-      };
-      data.styles.choropleth.fieldValues = [];
-    }; 
-
-    if (styleType === "simple") {
-      if (action === "fill") {data.styles.simple.fill.color = newColor;};
-      if (action === "stroke") {data.styles.simple.stroke.color = newColor;};
-    };
-
-    $.ajax({url: "layer/update/" + layerID, data: data}).done(function(data){
-      replaceTileLayer(layers[data.id].layer);
-    });
-  });
-};
 
 // todo: Finish updating this function to work. 
 updateGeojsonLayerColor = function() {
@@ -614,15 +549,6 @@ updateGeojsonLayerStyle = function(layerID,value,action,attribute,layers) {
   });
 };
 
-updateTileLayerStyle = function(layerID,value,action,attribute,layers) {
-  $.ajax({url: "layer/find/" + layerID}).done(function(data){
-    data = updateLayerStyleData(data,value,action,attribute);
-    $.ajax({url: "layer/update/" + layerID, data: data}).done(function(data){
-      replaceTileLayer(layers[data.id].layer);
-    });
-  });
-};
-
 updateLayerStyleData = function(data,value,action,attribute) {
   if (data.styles.type === "simple") {
     if (attribute === 'opacity') {
@@ -668,7 +594,6 @@ updateLayerVisibility = function(layerID,visibility) {
   $.ajax({url: "layer/find/" + layerID}).done(function(data){
     data.visible = visibility;
     $.ajax({url: "layer/update/" + layerID, data: data}).done(function(data){
-
     });
   });
 };
@@ -685,12 +610,6 @@ updateLayerDrawOrder = function(sorted_ids,layers,map) {
       layers[id].zIndex = index;
     });
   });
-};
-
-replaceTileLayer = function (layer) {
-  map = layer._map;
-  map.removeLayer(layer);
-  map.addLayer(layer);
 };
 
 drawFrequencyChart = function(values,valBreaks,element) {

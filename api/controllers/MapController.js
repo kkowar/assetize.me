@@ -101,8 +101,10 @@ module.exports = {
   },
 
   tiles: function(req,res) {
-    console.log(req.url);
+    // console.log(req.url);
+    // console.log(req.params);
     var grid_requested = req.url.match(".grid.json") ? true : false;
+    var raster_requested = req.url.match(".png") ? true : false;
     var req_callback = req.query.callback;
     var layerID = req.params.layerID;
     var mapnik = require('mapnik');
@@ -178,6 +180,7 @@ module.exports = {
       var style_type = layer.styles.type;
       var style = layer.styles[style_type];
       var geometry_type = layer.geometryType;
+      var fc_layer_name = layer.name;
 
 
       // var tileLat = tileY2lat(req.params.y,req.params.z);
@@ -212,6 +215,7 @@ module.exports = {
           if (features == undefined) {
             features = [];
           };
+          // console.log(features);
           // todo: consider maximum-extent property
           // '-20037508.34, -20037508.34, 20037508.34, 20037508.34' by setting it as a property of the mapnik.Map object.
           var xml_map_start = '<Map srs="+proj=merc +a=6378137 +b=6378137 +lat_ts=0.0 +lon_0=0.0 +x_0=0.0 +y_0=0.0 +k=1.0 +units=m +nadgrids=@null +wktext +no_defs +over" background-color="#00000000">';
@@ -253,12 +257,18 @@ module.exports = {
               // Category Style Rules
               _.each(style.fieldValues,function(fieldValue,index){
                 xml_style = xml_style + '<Rule>\n';
-                if (_.isFinite(fieldValue)) {
-                  xml_style = xml_style + '<Filter>[' + style.field + '] = ' + fieldValue + '</Filter>';
+
+                if (fieldValue.length == 0) {
+                  xml_style = xml_style + '<Filter>[' + style.field + '] = ""</Filter>';
                 } else {
-                  xml_style = xml_style + '<Filter>[' + style.field + '] = "' + fieldValue.replace(/"/g,'\\"') + '"</Filter>';
+                  // console.log(fieldValue + " : " + isNaN(fieldValue));
+                  if (isFinite(fieldValue)) {
+                    xml_style = xml_style + '<Filter>[' + style.field + '] = ' + fieldValue + '</Filter>';
+                  } else {
+                    xml_style = xml_style + '<Filter>[' + style.field + '] = "' + fieldValue.replace(/"/g,'\\"') + '"</Filter>';
+                  };
                 };
-                
+
                 if (geometry_type === "Point") {
                   xml_style = xml_style + '<MarkersSymbolizer fill="' + style.fieldFillColor[index] + '" opacity="' + style.fill.opacity + '" width="' + (style.radius * 2) + '" height="' + (style.radius * 2) + '" stroke="' + style.stroke.color + '" stroke-width="' + style.stroke.weight + '" stroke-opacity="' + style.stroke.opacity + '" placement="point" marker-type="ellipse" allow-overlap="true"/>\n'
                 };
@@ -297,7 +307,11 @@ module.exports = {
                 if (style.fieldBreaks[index + 1] !== undefined) {
                   xml_style = xml_style + '<Rule>\n';
 
-                  xml_style = xml_style + '<Filter>[' + style.field + '] &lt; ' + style.fieldBreaks[index + 1] + '</Filter>';
+                  // if (fieldValue.length == 0) {
+                  //   xml_style = xml_style + '<Filter>[' + style.field + '] = ""</Filter>';
+                  // } else {
+                    xml_style = xml_style + '<Filter>[' + style.field + '] &lt; ' + style.fieldBreaks[index + 1] + '</Filter>';
+                  // };
 
                   if (geometry_type === "Point") {
                     xml_style = xml_style + '<MarkersSymbolizer fill="' + style.fieldFillColor[index] + '" opacity="' + style.fill.opacity + '" width="' + (style.radius * 2) + '" height="' + (style.radius * 2) + '" stroke="' + style.stroke.color + '" stroke-width="' + style.stroke.weight + '" stroke-opacity="' + style.stroke.opacity + '" placement="point" marker-type="ellipse" allow-overlap="true"/>\n'
@@ -319,6 +333,8 @@ module.exports = {
             };
 
             xml_style = xml_style + '</Style>\n';
+
+            // console.log(xml_style);
 
           } else {
             var headers = [];
@@ -365,15 +381,40 @@ module.exports = {
               res.json({});
             };
           } else {
-            var im = new mapnik.Image(map.width, map.height);
-            map.render(im, function(err, im) {
-              if (err) {
-                throw err;
-              } else {
-                res.writeHead(200, {'Content-Type': 'image/png'});
-                res.end(im.encodeSync('png'));
+            if (raster_requested) {
+              // If image/png
+              var im = new mapnik.Image(map.width, map.height);
+              map.render(im, function(err, im) {
+                if (err) {
+                  throw err;
+                } else {
+                  res.writeHead(200, {'Content-Type': 'image/png'});
+                  res.end(im.encodeSync('png'));
+                };
+              });
+            } else {
+              // If vector tile - TODO
+              var vtile = new mapnik.VectorTile(zoom,x,y);
+              var geojson = {
+                "type": "FeatureCollection",
+                "features": features
               };
-            });
+              // vtile.addGeoJSON(JSON.stringify(geojson),fc_layer_name);
+              // vtile.addGeoJSON(JSON.stringify(geojson),"layer-name");
+              map.render(vtile, function(err, vtile) {
+                if (err) {
+                  throw err;
+                } else {
+                  res.writeHead(200,{'Content-Type': 'application/x-protobuf'});
+
+                  vtile.getData(function(err, data) {
+                    if (err) throw err;
+                    // console.log(data); // buffer
+                    res.end(data);
+                  });
+                };
+              });
+            };
           };
         });
       });

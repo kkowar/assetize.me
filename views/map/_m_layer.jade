@@ -6,8 +6,8 @@ mixin layer(layer)
   .panel.panel-default.layer-sortable(id="layer_#{layer.id}" style="margin-bottom: 10px;")
     .panel-heading
       small
-        - var checked = layer.visible === "true" ? true : false
-        input(type="checkbox" value="#{layer.id}" checked="#{checked}")
+        - var checked = layer.visible === true ? "checked" : undefined
+        input(type="checkbox" value="#{layer.id}" checked=checked)
         | 
         = _.str.truncate(layer.name,30)
       span.glyphicon.glyphicon-th.pull-right.drag-handle(style="color: #999;")

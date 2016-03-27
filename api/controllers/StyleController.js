@@ -84,6 +84,8 @@ module.exports = {
               };
               foundLayer.styles.category = generateLayerStyle(newStyle);
             };
+            console.log("StyleController->generate->foundLayer:")
+            console.log(foundLayer.styles.category.fieldFillColor);
             foundLayer.save(function(err){
               if (err) return console.log(err);
               if (!foundLayer) return;
@@ -101,9 +103,8 @@ module.exports = {
             foundLayer.styles.type = "choropleth";
             var categoryExists = (foundLayer.styles.choropleth === undefined) ? false : true;
             var fieldHeaders = _.map(_.filter(foundFC.properties,function(property){return property.type === "Number"}),function(property){return property.name});
-            console.log(field);
             if (!categoryExists && !field) {field = fieldHeaders[0]};         
-            if (categoryExists && !field) {field = foundLayer.styles.choropleth.field};       
+            if (categoryExists && !field) {field = foundLayer.styles.choropleth.field}; 
             var fieldValues = _.map(foundFeatures,function(feature){return feature.properties[field]});
             var fieldValuesCountBy = _.countBy(fieldValues, function(fV){return fV;});
             var sortable = [];

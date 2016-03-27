@@ -28,7 +28,7 @@ module.exports = {
 
   upload: function(req,res) {
     // console.log(req);
-    req.file('uploaded_files').upload(function (err, uploadedFiles) {
+    req.file('uploaded_files').upload({maxBytes: 30000000},function (err, uploadedFiles) {
       console.log(uploadedFiles);
       console.log(err);
       // if (uploadedFiles.length === 0){

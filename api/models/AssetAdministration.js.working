@@ -1,0 +1,36 @@
+/**
+ * AssetAdministration
+ *
+ * @module      :: Model
+ * @description :: A short summary of how this model works and what it represents.
+ * @docs		:: http://sailsjs.org/#!documentation/models
+ */
+
+module.exports = {
+
+  attributes: {
+
+  	pavement_classifications: {
+  		type: 'json'
+  		// Gravel
+  		// Brick and Block
+  		// Concrete
+  		// Asphalt
+  		// Earth
+  	},
+
+  	function_classifications: {
+  		type: 'json'
+  		// Arterial
+  		// Collector
+  		// Local
+  		// Industrial
+  	}
+  	
+  	/* e.g.
+  	nickname: 'string'
+  	*/
+    
+  }
+
+};
