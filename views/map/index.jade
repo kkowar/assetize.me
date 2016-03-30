@@ -18,7 +18,7 @@ block content
   script(src='/js/leaflet.tile.interaction.js')
   script(src='/js/leaflet.MapboxVectorTile.min.js')
   script(src='/js/L.Control.Locate.js')
-  script(src="/js/jquery.colorPicker.js")
+  script(src="/js/map.colorPicker.js")
   script(src="/js/select2.min.js")
 
   #mapPopupModal.modal.fade(tabindex="-1" role="dialog" aria-labelledby="filterColumnModalLabel" aria-hidden="true")
@@ -112,9 +112,9 @@ block content
           $.ajax({url: "/map/layer?fcID=" + fcID}).done(function(data) {
             $("#map_layers").prepend(data);
             var elID = $(data).attr("id");
-            console.log(elID);
             var layerID = elID.replace("layer_","");
             $("#" + elID + " .form_color .colorPicker").colorPicker();
+            $("#" + elID + " .progressColorPicker .colorPicker").colorPicker();
             setupSelect2DropDown("#" + elID + " select.layer-style-dropdown");
             $("#" + elID + " select.layer-style-dropdown").on("click", function (e) {
               handleLayerStyleDropDownClick(e);
@@ -140,19 +140,31 @@ block content
         if (e.currentTarget.checked === false) {
           gMap.removeLayer(gLayers[layerID].layer);
           gMap.removeLayer(gLayers[layerID].layerGrid);
-          updateLayerVisibility(layerID,false);
+          updateLayerVisibility(layerID,false,undefined);
         } else {
-          console.log(layerID);
-          console.log(gLayers);
-          console.log(gLayers[layerID]);
-          console.log("Adding Map Layer");
           gMap.addLayer(gLayers[layerID].layer);
-          console.log("Adding Grid Layer");
           gMap.addLayer(gLayers[layerID].layerGrid);
-          console.log("updateLayerVisibility");
-          updateLayerVisibility(layerID,true);
+          updateLayerVisibility(layerID,true,undefined);
         };
         drawZIndexOrder(gLayers,gMap);
+      });
+
+      $(document).on("click",".badge", function (e) {
+        //- console.log(e.currentTarget.id);
+        var split = e.currentTarget.id.split("_");
+        //- console.log(split);
+        var layerID = split[1];
+        var subLayerID = split[2];
+        var bgColor = e.currentTarget.style["background-color"].toString();
+        //- console.log(bgColor);
+        var visibility = bgColor === "rgb(221, 221, 221)" ? true : false;
+        if (visibility){
+          e.currentTarget.style["background-color"] = "#FFF";
+        } else {
+          e.currentTarget.style["background-color"] = "#DDD";
+        };
+
+        updateTileSubLayerVisibility(layerID,subLayerID,visibility,gLayers); 
       });
       
       $(document).on("click touchend",".remove-layer",function (e) {
@@ -207,13 +219,27 @@ block content
       $(".colorPicker").colorPicker();
 
       $(document).on("change","input.colorPicker",function(e){
-        var target = $(e.currentTarget);
-        var targetSplit = target.parent().parent().attr("id").split("_");
-        var action = targetSplit[0];
-        var layerID = targetSplit[1];
-        var subLayerID = targetSplit[2];
-        var newColor = e.target.value;
-        //- console.log([action,layerID,subLayerID,newColor]);
+        //- console.log(e.currentTarget.id);
+        var preTarget = e.currentTarget.id.split("_")
+        if (preTarget[0] == "progressbar") {
+          //- console.log("Progress Bar Color Changer");
+          var target = $(e.currentTarget);
+          //- console.log(target.parent());
+          var targetSplit = target.parent().attr("id").split("_");
+          var action = targetSplit[1];
+          var layerID = targetSplit[2];
+          var subLayerID = targetSplit[3];
+          var newColor = e.target.value;
+        } else {
+          var target = $(e.currentTarget);
+          //- console.log(target.parent().parent());
+          var targetSplit = target.parent().parent().attr("id").split("_");
+          var action = targetSplit[0];
+          var layerID = targetSplit[1];
+          var subLayerID = targetSplit[2];
+          var newColor = e.target.value;
+          //- console.log([action,layerID,subLayerID,newColor]);
+        };
         updateTileLayerColor(layerID,newColor,action,subLayerID,gLayers); 
       });
     };
@@ -302,7 +328,6 @@ block content
       var style = $("#s2id_type_" + layerID + "_" + fcID + " .select2-chosen").html();
       var field = $("#s2id_field_" + layerID + "_" + fcID + " .select2-chosen").html();
       var buckets = $("#s2id_buckets_" + layerID + "_" + fcID + " .select2-chosen").html()
-      console.log(buckets);
       if (buckets !== undefined) buckets = buckets.replace(" Buckets","");
       var classification = $("#s2id_classification_" + layerID + "_" + fcID + " .select2-chosen").html();
       data = {
@@ -313,8 +338,7 @@ block content
         , fcID: fcID
         , layerID: layerID
       };
-      console.log(e.currentTarget);
-      console.log(data);
+
       var jLayer = "#layer_" + layerID;
       $(jLayer + " .layer-forms").html("");
       $.ajax({url: "/style/generate", data: data}).done(function(html){
@@ -323,7 +347,8 @@ block content
         $(jLayer + " select.layer-style-dropdown").on("click", function (e) {
           handleLayerStyleDropDownClick(e);
         });
-        $(jLayer + " .form_color .colorPicker").colorPicker();
+        - $(jLayer + " .form_color .colorPicker").colorPicker();
+        - $(jLayer + " .progressColorPicker .colorPicker").colorPicker();
         // Old Style Type Dropdown Map Actions
         //- gMap.removeLayer(gLayers[layerID].layer);
         //- gLayers[layerID] = undefined;

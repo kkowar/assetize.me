@@ -9,24 +9,22 @@ getTiles = function(layer,layers,map) {
     }; 
   };
 
-  
-    // Timestamp to create browser refresh.
-    var timestamp = Math.floor(Date.now() / 1000);
+  // Timestamp to create browser refresh.
+  var timestamp = Math.floor(Date.now() / 1000);
 
-    // Get/add the png map tile.
-    var tileUrl = '/map/tiles/' + layer.id + '/{z}/{x}/{y}.png?timestamp=' + timestamp;
-    var tileLayer = new L.TileLayer(tileUrl);
-    layers[layer.id].layer = tileLayer;
+  // Get/add the png map tile.
+  var tileUrl = '/map/tiles/' + layer.id + '/{z}/{x}/{y}.png?timestamp=' + timestamp;
+  var tileLayer = new L.TileLayer(tileUrl);
+  layers[layer.id].layer = tileLayer;
 
-    // Get/add the utfGrid tile.
-    var utfGridUrl = '/map/tiles/' + layer.id + '/{z}/{x}/{y}.grid.json?callback={cb}'
-    var utfGridLayer = new L.UtfGrid(utfGridUrl, {resolution: 2});
-    layers[layer.id].layerGrid = utfGridLayer;
+  // Get/add the utfGrid tile.
+  var utfGridUrl = '/map/tiles/' + layer.id + '/{z}/{x}/{y}.grid.json?callback={cb}'
+  var utfGridLayer = new L.UtfGrid(utfGridUrl, {resolution: 2});
+  layers[layer.id].layerGrid = utfGridLayer;
 
-    // TODO: Possibly add zIndex for utfGrid tile.
-    layers[layer.id].redefine = false;
-    if (layers[layer.id].zIndex === undefined) {layers[layer.id].zIndex = tileLayer.zIndex};
-
+  // TODO: Possibly add zIndex for utfGrid tile.
+  layers[layer.id].redefine = false;
+  if (layers[layer.id].zIndex === undefined) {layers[layer.id].zIndex = tileLayer.zIndex};
     
   if (layer.visible === true) {
     gMap.addLayer(tileLayer);
@@ -79,8 +77,28 @@ updateTileLayerColor = function(layerID,newColor,action,subLayerID,layers) {
     };
 
     $.ajax({url: "layer/update/" + layerID, data: data}).done(function(data){
-      replaceTileLayer(data.id,layers);
+      replaceTileLayer(data.id,layers,false);
     });
+  });
+};
+
+updateTileSubLayerVisibility = function(layerID,subLayerID,visibility,layers) {
+  $.ajax({url: "layer/find/" + layerID}).done(function(data){
+    
+    var styleType = data.styles.type;
+    
+    if (styleType === "category") {
+      if (subLayerID !== "others") {
+        data.styles.category.fieldVisibility[subLayerID] = visibility == true ? false : true;
+      } else {
+        data.styles.category.fieldVisibilityOthers = visibility == true ? false : true;
+      };
+    };
+
+    $.ajax({url: "layer/update/" + layerID, data: data}).done(function(data){
+      replaceTileLayer(data.id,layers,true);
+    });
+
   });
 };
 
@@ -88,20 +106,29 @@ updateTileLayerStyle = function(layerID,value,action,attribute,layers) {
   $.ajax({url: "layer/find/" + layerID}).done(function(data){
     data = updateLayerStyleData(data,value,action,attribute);
     $.ajax({url: "layer/update/" + layerID, data: data}).done(function(data){
-      replaceTileLayer(data.id,layers);
+      replaceTileLayer(data.id,layers,false);
     });
   });
 };
 
-replaceTileLayer = function (fcID,layers) {
-  layer = layers[fcID].layer;
-  map = layer._map;
-  map.removeLayer(layer);
+replaceTileLayer = function (fcID,layers,update_grid) {
+  // layer = layers[fcID].layer;
+  map = layers[fcID].layer._map;
+  // png tiles
+  map.removeLayer(layers[fcID].layer);
   var timestamp = Math.floor(Date.now() / 1000);
   var tileUrl = '/map/tiles/' + fcID + '/{z}/{x}/{y}.png?timestamp=' + timestamp;
   var tileLayer = new L.TileLayer(tileUrl);
   map.addLayer(tileLayer);
   layers[fcID].layer = tileLayer;
+  if (update_grid) {
+    // utfgrid tiles
+    map.removeLayer(layers[fcID].layerGrid);
+    var utfGridUrl = '/map/tiles/' + fcID + '/{z}/{x}/{y}.grid.json?callback={cb}'
+    var utfGridLayer = new L.UtfGrid(utfGridUrl, {resolution: 2});
+    gMap.addLayer(utfGridLayer);
+    layers[fcID].layerGrid = utfGridLayer;
+  };
   drawZIndexOrder(layers,map);
 };
 

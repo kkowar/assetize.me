@@ -590,7 +590,7 @@ updateLayerStyleData = function(data,value,action,attribute) {
   return data;
 };
 
-updateLayerVisibility = function(layerID,visibility) {
+updateLayerVisibility = function(layerID,visibility,index) {
   $.ajax({url: "layer/find/" + layerID}).done(function(data){
     data.visible = visibility;
     $.ajax({url: "layer/update/" + layerID, data: data}).done(function(data){

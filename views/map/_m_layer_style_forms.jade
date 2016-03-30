@@ -8,7 +8,7 @@ mixin form_color_ramp(color)
 
 mixin form_opacity(opacity,layerID,categoryID)
   .form_spinner.form_opacity(id="opacity_#{layerID}_#{categoryID}")
-    input.value(value="#{parseFloat(opacity).toFixed(1)}" style="width:25px!important")
+    input.value.opacity(value="#{parseFloat(opacity).toFixed(1)}" style="width:25px!important")
     a.plus(href="#") +
     a.minus(href="#") -
 

@@ -182,7 +182,6 @@ module.exports = {
       var geometry_type = layer.geometryType;
       var fc_layer_name = layer.name;
 
-
       // var tileLat = tileY2lat(req.params.y,req.params.z);
       // var tileLon = tileX2lon(req.params.x,req.params.z);
       // console.log(tileLon,tileLat,req.params.z);
@@ -205,9 +204,49 @@ module.exports = {
       var poly_bbox = [min[0],min[1],max[0],max[1]];
       var poly_coords = [[poly_bbox[1],poly_bbox[0]],[poly_bbox[1],poly_bbox[2]],[poly_bbox[3],poly_bbox[2]],[poly_bbox[3],poly_bbox[0]],[poly_bbox[1],poly_bbox[0]]];
       
+      var null_exists = false;
+      var field = style.field;
+      var arrVisibleCategories = _.map(style.fieldVisibility,function(visible,index){
+        if (visible.toString() === 'true') {
+          var value = isFinite(style.fieldValues[index]) ? parseFloat(style.fieldValues[index]) : style.fieldValues[index].toString();
+          if ((value.toString() === 'null') || (value.toString() === 'Null')) null_exists = true;
+          return value;
+        } else {
+          return false;
+        };
+      }).filter(Boolean);
+      console.log("Visibile Categories:");
+      console.log(arrVisibleCategories);
+      var arrNotVisibleCategories = _.map(style.fieldVisibility,function(visible,index){
+        if (visible.toString() === 'true') {
+          return false;
+        } else {
+          var value = isFinite(style.fieldValues[index]) ? parseFloat(style.fieldValues[index]) : style.fieldValues[index].toString();
+          return value;
+        };
+      }).filter(Boolean);
+      console.log("Not Visibile Categories:");
+      console.log(arrNotVisibleCategories);
+      var queryField = 'properties.' + field;
+      var query = {};
+      query["$and"] = [];
+      query["$and"].push({"fcID":layer.fcID});
+      if (style_type === "category") {
+        if (style.fieldVisibilityOthers.toString() === 'true') {
+          query["$and"].push({[queryField]: {"$nin": arrNotVisibleCategories}});
+          if ((arrNotVisibleCategories.indexOf("Null") >= 0) || (arrNotVisibleCategories.indexOf("null") >= 0)){
+            query["$and"].push({[queryField]: {"$ne": null}});
+          };
+        } else {
+          if (null_exists === true) {
+            arrVisibleCategories.push(null);
+          };
+          query["$and"].push({[queryField]: {"$in": arrVisibleCategories}});
+        };
+      };
+      query["geometry"] = {$geoIntersects:{$geometry:{type:"Polygon",coordinates: [ poly_coords ]}}}
       Feature.native(function (err,collection) {
-        collection.find({"fcID": layer.fcID, geometry:{$geoIntersects:{$geometry:{type:"Polygon",coordinates: [ poly_coords ]}}}}).toArray(function(err, features) {
-        // collection.find({"fcID": layer.fcID}).toArray(function(err, features) {
+        collection.find(query).toArray(function(err, features) {
           if (err) {
             console.log(err);
             // return res.json({err: err});
@@ -215,14 +254,12 @@ module.exports = {
           if (features == undefined) {
             features = [];
           };
-          // console.log(features);
           // todo: consider maximum-extent property
           // '-20037508.34, -20037508.34, 20037508.34, 20037508.34' by setting it as a property of the mapnik.Map object.
           var xml_map_start = '<Map srs="+proj=merc +a=6378137 +b=6378137 +lat_ts=0.0 +lon_0=0.0 +x_0=0.0 +y_0=0.0 +k=1.0 +units=m +nadgrids=@null +wktext +no_defs +over" background-color="#00000000">';
           var xml_style = "";
 
           if (features.length !== 0) {
-
             // todo: handle headers with spaces;
             var headers = _.map(features[0].properties,function(value,key){return key;});
 

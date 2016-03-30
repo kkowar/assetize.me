@@ -40,7 +40,9 @@ var stylePoint = function (styleGuidelines) {
 			stroke: stroke,
 			fieldFillColor: getCategoryFillColors(styleGuidelines.fieldValues.length),
 			operation: undefined,
-			label: undefined
+			label: undefined,
+      fieldVisibility: styleGuidelines.fieldVisibility,
+      fieldVisibilityOthers: styleGuidelines.fieldVisibilityOthers
 		};
 	};
 
@@ -99,7 +101,9 @@ var stylePolygon = function (styleGuidelines) {
 			stroke: stroke,
 			fieldFillColor: getCategoryFillColors(styleGuidelines.fieldValues.length),
 			operation: undefined,
-			label: undefined
+			label: undefined,
+      fieldVisibility: styleGuidelines.fieldVisibility,
+      fieldVisibilityOthers: styleGuidelines.fieldVisibilityOthers
 		};
 	};
 	
@@ -154,7 +158,9 @@ var styleLine = function (styleGuidelines) {
 			stroke: stroke,
 			fieldFillColor: getCategoryFillColors(styleGuidelines.fieldValues.length),
 			operation: undefined,
-			label: undefined
+			label: undefined,
+      fieldVisibility: styleGuidelines.fieldVisibility,
+      fieldVisibilityOthers: styleGuidelines.fieldVisibilityOthers
 		};
 	};
 

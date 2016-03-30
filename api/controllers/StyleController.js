@@ -78,14 +78,14 @@ module.exports = {
                 fieldValuesCount: fieldValuesSortedCount,
                 fieldValuesOthersCount: fieldValuesOthersCount,
                 fieldOthersFill: "#999999",
+                fieldVisibility:  _.map(fieldValuesSortedCount,function(fVSC){return true;}),
+                fieldVisibilityOthers: true,
                 stroke: stroke,
                 fill: fill,
                 radius: radius
               };
               foundLayer.styles.category = generateLayerStyle(newStyle);
             };
-            console.log("StyleController->generate->foundLayer:")
-            console.log(foundLayer.styles.category.fieldFillColor);
             foundLayer.save(function(err){
               if (err) return console.log(err);
               if (!foundLayer) return;
@@ -126,26 +126,22 @@ module.exports = {
               if (buckets === undefined) {buckets = lStyle.bucketCount;};
               if (classification === undefined) {classification = lStyle.classification;};
             };
-            // var truthy = !categoryExists || (foundLayer.styles.choropleth.field !== field) || (foundLayer.styles.choropleth.bucketCount !== buckets) || (foundLayer.styles.choropleth.classification !== classification)
-            // console.log("truthy: " + truthy);
-            // if (truthy) {
-              console.log("Creating New Style");
-              console.log([classification,buckets])
-              var newStyle = {
-                type: "choropleth",
-                geometryType: foundFC.geometryType,
-                field: field,
-                fieldHeaders: fieldHeaders,
-                classification: classification,
-                bucketCount: buckets,
-                fieldValues: fieldValues,
-                fieldValuesCount: fieldValuesSortedCount,
-                stroke: stroke,
-                fill: fill,
-                radius: radius
-              };
-              foundLayer.styles.choropleth = generateLayerStyle(newStyle);
-            // };
+            console.log("Creating New Style");
+            console.log([classification,buckets])
+            var newStyle = {
+              type: "choropleth",
+              geometryType: foundFC.geometryType,
+              field: field,
+              fieldHeaders: fieldHeaders,
+              classification: classification,
+              bucketCount: buckets,
+              fieldValues: fieldValues,
+              fieldValuesCount: fieldValuesSortedCount,
+              stroke: stroke,
+              fill: fill,
+              radius: radius
+            };
+            foundLayer.styles.choropleth = generateLayerStyle(newStyle);
             foundLayer.save(function(err){
               if (err) return console.log(err);
               if (!foundLayer) return;
@@ -156,7 +152,6 @@ module.exports = {
             });
           });
         };
-        // res.json({message: "You shouldn't see this."});
       });
     })
 	},

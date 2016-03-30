@@ -1,3 +1,4 @@
+// NOT CURRENTLY USED 
 /**
  * AssetConditionCategory
  *
@@ -44,15 +45,19 @@ module.exports = {
 
 // This is the default type that comes with all condition categories provided with start up data.
 // When this type is selected, the Index Mappings recordset for the condition category is populated with 11 records, and only the Indexes can be edited.
+
 // Index
-// An Index type condition category requires entry of the actual  inspected Index during an Inspection.
+
+// An Index type condition category requires entry of the actual inspected Index during an Inspection.
 // When this type is selected, the Index Mappings recordset for the condition category is empty and cannot be edited.
+
 // Number
 
 // This type allows the entry of a number value during an inspection, which determines the inspected index based on the Index Mappings.
 // The Index Mappings of a Number type must include the high and low bounds of the acceptable values. For example,
 // If a reading of a condition category can never be more than 400, then there must be an Index Mapping for a Value of 400 and none greater than 400.
 // If a reading can never be less than 50 then there must be an Index Mapping for a Value of 50 and none less than 50.
+
 // Quantity
 
 // This type allows a condition category to be measured with an amount and unit, which determines the inspected index based on the Index Mappings.
@@ -64,6 +69,7 @@ module.exports = {
 // The Index Mappings of a Quantity type must include the high and low bounds of the acceptable values, including the unit. For example,
 // If a reading of a condition category can never be more than 80 degrees F, there must be an Index Mapping for a Value of 80 F and none more than 80 F.
 // If a reading of a condition category can never be less than 20 degrees F, there must be an Index Mapping for a Value of 20 F and none less than 20 F.
+
 // Option
 
 // This type allows selecting from a list of values during the inspection, which determines the index based on the Index Mappings.

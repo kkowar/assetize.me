@@ -21,33 +21,37 @@ mixin line_category_form(layer)
 				| Column
 			span.pull-right.brushes(id="layer_#{layer.id}_0")
 				+style_field_dropdown(style.fieldHeaders,style.field,layer)
-		.row
+		.row(style="border-bottom: 1px dotted #CCC;")
 			span.description
 				| Line Stroke
 			span.pull-right.brushes(id="stroke_#{layer.id}_0")
 				+form_weight(style.stroke.weight)
 				| 
 				+form_opacity(style.stroke.opacity,layer.id,0)
-		
+		- var sum = style.fieldValuesCount[0][1]
 		- each fieldValue, index in style.fieldValuesCount
 			.row
-				span.badge(style="font-size: 10px; width: 40px; background-color: white; position: relative; top: 4px; border: 1px solid #666666; color: #666666;")
-					= fieldValue[1]
-				span.description
-					|  
-					= _.str.truncate(fieldValue[0],15)
-				span.pull-right.brushes(id="stroke_#{layer.id}_#{index}")
-					+form_color(style.fieldFillColor[index])
+				div
+					span.description
+						- var label = fieldValue[0] == "" ? "No Value" : fieldValue[0]
+						= label
+					- var badgeFill = style.fieldVisibility[index].toString() === "true" ? "#DDD" : "#FFF"
+					span.pull-right.badge(id="badge_#{layer.id}_#{index}" style="font-size: 10px; width: 40px; background-color: #{badgeFill}; position: relative; top: 4px; border: 1px solid #666666; color: #666666;")
+						= fieldValue[1]
+				div.progressColorPicker(id="progressbar_stroke_#{layer.id}_#{index}")
+					- var progressWidth = Math.round((parseInt(fieldValue[1])/sum)*100)
+					input.colorPicker(id="progressbar_#{layer.id}_#{index}_#{progressWidth}" value="#{style.fieldFillColor[index]}")
 		
 		- if (style.fieldValuesOthersCount != 0)
 			.row
-				span.badge(style="font-size: 10px; width: 40px; background-color: white; position: relative; top: 4px; border: 1px solid #666666; color: #666666;")
-					= style.fieldValuesOthersCount
-				span.description 
-					|  
-					| Others
-				span.pull-right.brushes(id="stroke_#{layer.id}_others")
-					+form_color(style.fieldOthersFill)
+				div
+					span.description 
+						| Others
+					- var badgeFill = style.fieldVisibilityOthers.toString() === "true" ? "#DDD" : "#FFF"
+					span.pull-right.badge(id="badge_#{layer.id}_others" style="font-size: 10px; width: 40px; background-color: #{badgeFill}; position: relative; top: 4px; border: 1px solid #666666; color: #666666;")
+						= style.fieldValuesOthersCount
+				div.progressColorPicker(id="progressbar_stroke_#{layer.id}_others")
+					input.colorPicker(id="progressbar_#{layer.id}_others_#{progressWidth}" value="#{style.fieldOthersFill}")
 
 mixin line_choropleth_form(layer)
 	- var style = layer.styles.choropleth
