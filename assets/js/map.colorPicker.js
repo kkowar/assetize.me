@@ -141,11 +141,14 @@
           element.next(".colorPicker-picker").css(
             "background-color", $.fn.colorPicker.toHex($(this).val())
           );
-          var split = element.attr("id").split("_");
-          var widthValue = split[3].toString() + "%";
-          if (split[0] === "progressbar") {
-            element.next(".colorPicker-picker").css("width", widthValue);
-          }
+          console.log(element.attr("id"));
+          if (element.attr("id") !== undefined){
+            var split = element.attr("id").split("_");
+            var widthValue = split[3].toString() + "%";
+            if (split[0] === "progressbar") {
+              element.next(".colorPicker-picker").css("width", widthValue);
+            }
+          };
         });
 
         element.val(defaultColor);

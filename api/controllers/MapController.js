@@ -176,7 +176,7 @@ module.exports = {
     // console.log(bbox);
 
     Layer.findOne().where({"id": layerID}).exec(function(err,layer){
-
+      console.log(layer);
       var style_type = layer.styles.type;
       var style = layer.styles[style_type];
       var geometry_type = layer.geometryType;
@@ -227,12 +227,15 @@ module.exports = {
       }).filter(Boolean);
       console.log("Not Visibile Categories:");
       console.log(arrNotVisibleCategories);
+      // arrNotVisibleCategories[0] = arrNotVisibleCategories[0].toString();
       var queryField = 'properties.' + field;
       var query = {};
       query["$and"] = [];
       query["$and"].push({"fcID":layer.fcID});
+      console.log("Others: " + style.fieldVisibilityOthers)
       if (style_type === "category") {
         if (style.fieldVisibilityOthers.toString() === 'true') {
+          console.log("$nin: arrNotVisibleCategories");
           query["$and"].push({[queryField]: {"$nin": arrNotVisibleCategories}});
           if ((arrNotVisibleCategories.indexOf("Null") >= 0) || (arrNotVisibleCategories.indexOf("null") >= 0)){
             query["$and"].push({[queryField]: {"$ne": null}});
@@ -244,6 +247,7 @@ module.exports = {
           query["$and"].push({[queryField]: {"$in": arrVisibleCategories}});
         };
       };
+      // { field: { $type: <BSON type number> | <String alias> } }
       query["geometry"] = {$geoIntersects:{$geometry:{type:"Polygon",coordinates: [ poly_coords ]}}}
       Feature.native(function (err,collection) {
         collection.find(query).toArray(function(err, features) {

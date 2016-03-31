@@ -292,11 +292,13 @@ block content
 
     var showFilterModal = function (fieldIndex,fcID) {
       var jSelector = $("#dropdown_menu_" + fcID + "_" + fieldIndex + " div");
-      var fieldName = jSelector.html().split("&nbsp;")[0];
+      //- console.log(jSelector[0].childNodes[0].html());
+      var fieldName = jSelector[0].childNodes[0].textContent.trim();
       console.log(fieldName);
       $("#filterColumnModalLabel").html("Filter data by column <strong>\"" + fieldName + "\"</strong>");
       $("#filterColumnModal input#filter_fieldIndex").val(fieldIndex);
       $("#filterColumnModal input#filter_fieldName").val(fieldName);
+      console.log($("#filterColumnModal input#filter_fieldName").val());
       $("#filterColumnModal").modal('show');
     };
 
@@ -306,7 +308,6 @@ block content
         console.log(data);
         $("tbody").html(data.html);
         setTableDimensions();
-        //- window.location.replace("/table/" + fcID);
       });
     };
 

@@ -30,6 +30,7 @@ module.exports = {
     FeatureCollection.findOne({"id": fcID}).exec(function(err,foundFC) {
       if (err) return res.json({error: err});
       if (!foundFC) return res.json({foundFC: foundFC});
+      console.log(foundFC);
       Layer.findOne({"id": layerID}).exec(function(err,foundLayer){
         if (err) return res.json({error: err});
         if (!foundLayer) return res.json({foundLayer: foundLayer});

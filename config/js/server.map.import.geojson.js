@@ -4,7 +4,7 @@ importGeoJSON = function (name,fileName) {
   fs.readFile(fileName, 'utf8', function (err,data) {
     if (err) {return console.log(err);};
     var fc = JSON.parse(data);
-    console.log(fc);
+    // console.log(fc);
     createFeatureCollection(name,fc);
   });  
 };
@@ -130,6 +130,7 @@ pointInPolygon = function (point, vs) {
 };
 
 createFeature = function (feature,fcID,index) {
+  // iterate through feature.properties and set the type.
   var f = {
     fcID: fcID,
     fID: index,
