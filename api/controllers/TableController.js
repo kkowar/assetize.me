@@ -42,11 +42,6 @@ module.exports = {
   },
 
   destroy: function(req,res) {
-
-  },
-
-  destroy: function(req,res) {
-    console.log("destroy")
     var action = req.query.action;
     var value = req.query.value;
     var fcID = req.query.fcID;
@@ -56,7 +51,7 @@ module.exports = {
 
       // fID is added on the client and we need to
       // account for this when accessing the properties
-      // array of the FeatureColleciton.
+      // array of the FeatureCollection.
       var propIndex = value - 1;
 
       FeatureCollection.findOne({"id": fcID}).exec(function(err,foundFC){
