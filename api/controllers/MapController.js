@@ -205,24 +205,35 @@ module.exports = {
       var poly_coords = [[poly_bbox[1],poly_bbox[0]],[poly_bbox[1],poly_bbox[2]],[poly_bbox[3],poly_bbox[2]],[poly_bbox[3],poly_bbox[0]],[poly_bbox[1],poly_bbox[0]]];
       
       var null_exists = false;
+      var Null_exists = false;
+      var is_empty = false;
       var field = style.field;
       var arrVisibleCategories = _.map(style.fieldVisibility,function(visible,index){
         if (visible.toString() === 'true') {
-          var value = isFinite(style.fieldValues[index]) ? parseFloat(style.fieldValues[index]) : style.fieldValues[index].toString();
-          if ((value.toString() === 'null') || (value.toString() === 'Null')) null_exists = true;
-          return value;
+          // var value = isFinite(style.fieldValues[index]) ? parseFloat(style.fieldValues[index]) : style.fieldValues[index].toString();
+          var value = style.fieldValues[index];
+          if (value.toString() === 'null') null_exists = true;
+          if (value.toString() === 'Null') Null_exists = true;
+          if (value.toString() === "") is_empty = true;
+          // return value;
+          return style.fieldValues[index].toString();
         } else {
           return false;
         };
       }).filter(Boolean);
-      console.log("Visibile Categories:");
+      if (null_exists) arrVisibleCategories.push("null");
+      if (Null_exists) arrVisibleCategories.push("Null");
+      if (is_empty) arrVisibleCategories.push("");
+
+      console.log("Visible Categories:");
       console.log(arrVisibleCategories);
       var arrNotVisibleCategories = _.map(style.fieldVisibility,function(visible,index){
         if (visible.toString() === 'true') {
           return false;
         } else {
-          var value = isFinite(style.fieldValues[index]) ? parseFloat(style.fieldValues[index]) : style.fieldValues[index].toString();
-          return value;
+          // var value = isFinite(style.fieldValues[index]) ? parseFloat(style.fieldValues[index]) : style.fieldValues[index].toString();
+          // return value;
+          return style.fieldValues[index].toString();
         };
       }).filter(Boolean);
       console.log("Not Visibile Categories:");
@@ -230,23 +241,24 @@ module.exports = {
       // arrNotVisibleCategories[0] = arrNotVisibleCategories[0].toString();
       var queryField = 'properties.' + field;
       var query = {};
-      query["$and"] = [];
-      query["$and"].push({"fcID":layer.fcID});
-      console.log("Others: " + style.fieldVisibilityOthers)
-      if (style_type === "category") {
-        if (style.fieldVisibilityOthers.toString() === 'true') {
-          console.log("$nin: arrNotVisibleCategories");
-          query["$and"].push({[queryField]: {"$nin": arrNotVisibleCategories}});
-          if ((arrNotVisibleCategories.indexOf("Null") >= 0) || (arrNotVisibleCategories.indexOf("null") >= 0)){
-            query["$and"].push({[queryField]: {"$ne": null}});
-          };
-        } else {
-          if (null_exists === true) {
-            arrVisibleCategories.push(null);
-          };
-          query["$and"].push({[queryField]: {"$in": arrVisibleCategories}});
-        };
-      };
+      query["fcID"] = layer.fcID;
+      // query["$and"] = [];
+      // query["$and"].push({"fcID":layer.fcID});
+      // console.log("Others: " + style.fieldVisibilityOthers)
+      // if (style_type === "category") {
+      //   if (style.fieldVisibilityOthers.toString() === 'true') {
+      //     console.log("$nin: arrNotVisibleCategories");
+      //     query["$and"].push({[queryField]: {"$nin": arrNotVisibleCategories}});
+      //     if ((arrNotVisibleCategories.indexOf("Null") >= 0) || (arrNotVisibleCategories.indexOf("null") >= 0)){
+      //       query["$and"].push({[queryField]: {"$ne": null}});
+      //     };
+      //   } else {
+      //     if (null_exists === true) {
+      //       arrVisibleCategories.push(null);
+      //     };
+      //     query["$and"].push({[queryField]: {"$in": arrVisibleCategories}});
+      //   };
+      // };
       // { field: { $type: <BSON type number> | <String alias> } }
       query["geometry"] = {$geoIntersects:{$geometry:{type:"Polygon",coordinates: [ poly_coords ]}}}
       Feature.native(function (err,collection) {
@@ -268,9 +280,43 @@ module.exports = {
             var headers = _.map(features[0].properties,function(value,key){return key;});
 
             var inline = headers.join(",") + ",geojson\n"
-            _.each(features,function(feature){
-              inline = inline + feature.xml;
-            });
+            // console.log(arrVisibleCategories);
+            if (style_type === "category") {
+              _.each(features,function(feature){
+                if (feature.properties[field] === null) {
+                  console.log("Into Null");
+                  // if (style.fieldVisibilityOthers.toString() === 'true') {
+                  //   if (_.indexOf(arrNotVisibleCategories,feature.properties[field].toString()) < 0) {
+                  //     inline = inline + feature.xml;
+                  //   }; 
+                  // }; 
+                  console.log(style.fieldVisibilityOthers.toString());
+                  if (style.fieldVisibilityOthers.toString() !== 'true') {
+                    console.log("fieldVisibilityOthers === false");
+                    if ((null_exists === true) || (Null_exists === true)) {
+                      inline = inline + feature.xml;
+                    }; 
+                  };
+                } else {
+                  if (style.fieldVisibilityOthers.toString() === 'true') {
+                    if (_.indexOf(arrNotVisibleCategories,feature.properties[field].toString()) < 0) {
+                      inline = inline + feature.xml;
+                    }; 
+                  }; 
+                  if (style.fieldVisibilityOthers.toString() !== 'true') {
+                    if (_.indexOf(arrVisibleCategories,feature.properties[field].toString()) > 0) {
+                      inline = inline + feature.xml;
+                    }; 
+                  };
+                };
+              });
+            } else {
+              _.each(features,function(feature){
+                inline = inline + feature.xml;
+              });
+            };
+
+            
 
             xml_style = '<Style name="' + layerID + '" filter-mode="first">\n';
 

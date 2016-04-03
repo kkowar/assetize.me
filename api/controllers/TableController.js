@@ -16,7 +16,7 @@
  */
 
 module.exports = {
-    
+
   show: function(req,res) {
     var id = req.params.id;
     FeatureCollection.findOne({"id": id}).limit(1).exec(function(err,foundFC){
@@ -42,6 +42,11 @@ module.exports = {
   },
 
   destroy: function(req,res) {
+
+  },
+
+  destroy: function(req,res) {
+    console.log("destroy")
     var action = req.query.action;
     var value = req.query.value;
     var fcID = req.query.fcID;
@@ -100,7 +105,7 @@ module.exports = {
           _.each(foundFeatures,function(feature) {
             feature.properties = _.pairs(feature.properties);
             feature.properties[propIndex][0] = newFieldName;
-            feature.properties = _.object(feature.properties);            
+            feature.properties = _.object(feature.properties);
             feature.save(function(err) {
               if (err) return console.log(err);
               if (!feature) return console.log(feature);
@@ -168,5 +173,5 @@ module.exports = {
    */
   _config: {}
 
-  
+
 };

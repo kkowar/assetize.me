@@ -19,6 +19,7 @@ html
     script(src="/js/bootstrap.js")
     script(src="/js/underscore-min.js")
     script(src="/js/underscore.strings.js")
+    script(src="/js/moment.js")
 
     // STYLES
     link(rel="stylesheet", href="/styles/L.Control.Locate.css")
@@ -47,12 +48,12 @@ html
     .navbar.navbar-default.navbar-fixed-top.navbar-inverse.no-print
       .container
         .navbar-header
-          img.navbar-brand(src='/images/logo_words.png', style='height: 50px; position: relative; top: -2px;')
+          //- img.navbar-brand(src='/images/logo_words.png', style='height: 50px; position: relative; top: -2px;')
           ul#navbarMain.nav.navbar-nav
             - var active = ((req.options.controller === 'featurecollection') && (req.options.action === 'index')) ? "active" : ""
             li(class="#{active}")
               a#navTable(href="/featurecollection")
-                | Features
+                span.glyphicon.glyphicon-home
             - if ((req.options.controller != 'table') && (req.options.action != 'show'))
               - var active = (req.options.controller === 'map') ? "active" : ""
               li

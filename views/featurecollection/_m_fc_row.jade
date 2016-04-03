@@ -14,3 +14,8 @@ mixin feature_collection_row(fc)
       = fc.updatedAt
     td
       span.glyphicon.glyphicon-remove.remove-featureClass(id="fc_#{fc.id}" style="color: red;")
+      
+    script.
+      var td = $("#feature_collection_#{fc.id}").children();
+      td[3].innerHTML = moment(new Date(td[3].innerHTML)).format('LLL');
+      td[4].innerHTML = moment(new Date(td[3].innerHTML)).format('LLL');

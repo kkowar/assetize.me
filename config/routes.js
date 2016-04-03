@@ -54,6 +54,14 @@ module.exports.routes = {
     controller: 'TableController',
     action: 'stats'
   },
+  'DELETE /table': {
+    controller: 'TableController',
+    action: 'destroy'
+  },
+  // '/table/delete': {
+  //   controller: 'TableController',
+  //   action: 'destroy'
+  // },
   // '/table/search': {
   //   controller: 'TableController',
   //   action: 'search'
